@@ -1,8 +1,8 @@
 #!/usr/bin/python
-from infrastructure import platform_aws as platform
+from infrastructure import platform_aws as provider
 from util import ssh
 
-cloud = platform.Infrastructure()
+cloud = provider.Platform()
 
 HOST = "ec2-54-193-14-166.us-west-1.compute.amazonaws.com"
 LIST_CMD = cloud.recipe_saltmaster

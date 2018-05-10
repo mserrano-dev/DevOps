@@ -1,11 +1,11 @@
 #!/usr/bin/python
 import awscli
-from infrastructure.interface import Platform
+from infrastructure.interface import Infrastructure
 
-# ---------------------------------------------------------------------------- #
+# ============================================================================ #
 # Infrastructure via Amazon Web Services
-# ---------------------------------------------------------------------------- #
-class Infrastructure(Platform):
+# ============================================================================ #
+class Platform(Infrastructure):
     def create_server(self):
         return
     
