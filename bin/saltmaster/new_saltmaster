@@ -1,0 +1,3 @@
+#!/bin/bash
+PROJECT_ROOT=`dirname $0`/../..
+python "$PROJECT_ROOT/devops/new_saltmaster.py" $@

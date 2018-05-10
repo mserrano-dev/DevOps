@@ -9,3 +9,5 @@ LIST_CMD = cloud.recipe_saltmaster
 IDENTITY = "mserrano-stage.pem"
 
 ssh.call(HOST, LIST_CMD, IDENTITY)
+
+print 'hello world of bin'
