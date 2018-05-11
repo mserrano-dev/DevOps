@@ -3,11 +3,12 @@ from infrastructure import platform_aws as provider
 from util import ssh
 
 cloud = provider.Platform()
+list_instance = cloud.create_server()
+print list_instance
 
-HOST = "ec2-54-193-14-166.us-west-1.compute.amazonaws.com"
-LIST_CMD = cloud.recipe_saltmaster
-IDENTITY = "mserrano-stage.pem"
-
-ssh.call(HOST, LIST_CMD, IDENTITY)
+install_saltmaster = cloud.recipe_saltmaster
+id_file = "mserrano-stage.pem"
+for instance_id, host in list_instance.items():
+    ssh.call(host, install_saltmaster, id_file)
 
 print 'hello world of bin'

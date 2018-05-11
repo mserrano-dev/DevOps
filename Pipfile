@@ -7,6 +7,7 @@ name = "pypi"
 
 [packages]
 "boto3" = "*"
+termcolor = "*"
 
 [requires]
 python_version = "2.7"
