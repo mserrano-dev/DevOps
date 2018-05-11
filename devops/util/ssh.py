@@ -23,8 +23,8 @@ def call(HOST, LIST_CMD, IDENTITY):
       NOTE: assumes identity file in directory ~/.ssh
     """
     args = [
-        "ssh", "-t", 
+        "ssh", "-T",
         "-i", "%s/.ssh/%s" % (os.path.expanduser("~"), IDENTITY), 
         "ubuntu@%s" % HOST, ' && '.join(LIST_CMD)
     ]
-    subprocess.Popen(args).wait()
+    return subprocess.Popen(args).wait()
