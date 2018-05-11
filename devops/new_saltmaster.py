@@ -8,6 +8,7 @@ print list_instance
 
 install_saltmaster = cloud.recipe_saltmaster
 id_file = "mserrano-stage.pem"
+ssh.add_fingerprint(list_instance.values())
 for instance_id, host in list_instance.items():
     ssh.call(host, install_saltmaster, id_file)
 
