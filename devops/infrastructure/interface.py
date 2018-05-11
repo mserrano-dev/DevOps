@@ -25,7 +25,7 @@ class Infrastructure(object):
     __recipe = {
         'saltmaster': ['update', 'saltmaster', 'cowsay'],
     }
-    
+        
     # =-=-=--=---=-----=--------=-------------=
     # Functions
     # ----------------------------------------=
@@ -37,7 +37,7 @@ class Infrastructure(object):
         """
         Spin up a vanilla Linux instance
         """
-        return """ @returns HOST on success, NULL on failure """
+        return """ @returns HOST on success, False on failure """
     
     @abc.abstractmethod
     def remove_server():
@@ -45,7 +45,7 @@ class Infrastructure(object):
         Destroy a specified Linux instance
             :param KEY - id of machine to delete cleanly
         """
-        return """ @returns NULL """
+        return """ @returns True on success, False on failure """
     
     # =-=-=--=---=-----=--------=-------------=
     # Helpers
