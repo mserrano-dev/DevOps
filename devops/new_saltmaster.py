@@ -1,10 +1,10 @@
 #!/usr/bin/python
 from infrastructure import platform_aws as provider
-from time import time
 from util import multi_thread
 from util import ssh
+from util import timer
 
-ts = time()
+stopwatch = timer.Stopwatch()
 
 cloud = provider.Platform()
 list_instance = cloud.create_server()
@@ -19,4 +19,4 @@ for instance_id, host in list_instance.items():
     runner.add_task(name=instance_id, target=ssh.call, args=(host, install_saltmaster, id_file,))
 runner.invoke_all_and_wait()
 
-print 'Execution Time: %.2fs' % (time() - ts)
+stopwatch.output_report()
