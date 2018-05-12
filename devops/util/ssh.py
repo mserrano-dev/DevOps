@@ -11,11 +11,12 @@ def add_fingerprint(LIST_HOST):
         :param LIST_HOST - [<String>]
     """
     args = [
-        "ssh-keyscan", "-H",
+        "ssh-keyscan", "-H", "-4",
     ] + LIST_HOST
     
-    out_file = open("%s/.ssh/known_hosts" % os.path.expanduser("~"), "a")
-    subprocess.Popen(args, stdout=out_file).wait()
+    process = subprocess.Popen(args, stdout=subprocess.PIPE)
+    process.wait()
+    return process.stdout.read()
     
 def call(HOST, LIST_CMD, IDENTITY):
     """

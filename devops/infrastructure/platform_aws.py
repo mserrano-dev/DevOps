@@ -16,9 +16,8 @@ class Platform(Infrastructure):
         self.system_status_ok = self.ec2.get_waiter('system_status_ok')
         Infrastructure.__init__(self)
     
-    def create_server(self):
+    def create_server(self, num_instance):
         # create the instances
-        num_instance = 2
         args = {
             'LaunchTemplate': {
                 'LaunchTemplateName': 'stage_WebServer',
@@ -27,18 +26,17 @@ class Platform(Infrastructure):
             'MaxCount': num_instance,
             'MinCount': num_instance
         }
-        resp = self.ec2.run_instances(** args)
+        resp = self.ec2.run_instances( ** args)
         list_instance = []
         for obj in resp['Instances']:
             list_instance.append(obj['InstanceId'])
         
         # wait for all instances to spin up
-        custom_waiter = Polling()
+        custom_waiter = Polling(5, 'Spinning up new servers...', '...DONE')
         custom_waiter.register_polling_fn(self.ec2.describe_instance_status)
-        custom_waiter.register_resp_parser_fn(self.__resp_parser)
-        custom_waiter.register_resp_status_fn(self.__resp_status)
+        custom_waiter.register_resp_parser_fn(self.__resp_parser, {})
+        custom_waiter.register_resp_status_fn(self.__resp_status, {})
         custom_waiter.wait({'InstanceIds': list_instance})
-        self.system_status_ok.wait(InstanceIds=list_instance)
         
         # collect info to return
         resp = self.ec2.describe_instances(InstanceIds=list_instance)
@@ -72,15 +70,15 @@ class Platform(Infrastructure):
     def __resp_parser(self, resp):
         result = {}
         for obj in resp['InstanceStatuses']:
-            status = obj['InstanceStatus']['Status']
+            status = obj['InstanceState']['Name']
             if status in result:
                 result[status] += 1
             else:
                 result[status] = 1
             
         _return = False
-        if (len(result)) == 1 and ('ok' in result):
-            if (result['ok'] == len(resp['InstanceStatuses'])):
+        if (len(result)) == 1 and ('running' in result):
+            if (result['running'] == len(resp['InstanceStatuses'])):
                 _return = True
                 
         return _return
@@ -88,7 +86,7 @@ class Platform(Infrastructure):
     def __resp_status(self, resp):
         result = {}
         for obj in resp['InstanceStatuses']:
-            status = obj['InstanceStatus']['Status']
+            status = obj['InstanceState']['Name']
             if status in result:
                 result[status] += 1
             else:
@@ -96,6 +94,6 @@ class Platform(Infrastructure):
         
         _return = ''
         if len(result) != 0:
-            _return = '%s servers with status \"%s\"' % (result.values()[0], result.keys()[0])
+            _return = '%s servers %s' % (result.values()[0], result.keys()[0])
             
         return _return
