@@ -28,10 +28,10 @@ class Stopwatch():
     def output_report(self):
         self.__end_time = time.time()
         
-        time_string = time_string(delta=int(self.__end_time - self.__start_time),
-                                  hours="%dh",
-                                  minutes="%dm",
-                                  seconds="%ds",
-                                  delim=" ",
-                                  always_show=False)
-        print 'Execution Time: %s' % time_string
+        formatted_string = time_string(delta=int(self.__end_time - self.__start_time),
+                                       hours="%dh",
+                                       minutes="%dm",
+                                       seconds="%ds",
+                                       delim=" ",
+                                       always_show=False)
+        print 'Execution Time: %s' % formatted_string
