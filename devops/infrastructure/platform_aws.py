@@ -16,15 +16,15 @@ class Platform(Infrastructure):
         self.system_status_ok = self.ec2.get_waiter('system_status_ok')
         Infrastructure.__init__(self)
     
-    def create_server(self, num_instance):
+    def create_server(self, COUNT):
         # create the instances
         args = {
             'LaunchTemplate': {
                 'LaunchTemplateName': 'stage_WebServer',
                 'Version': '4'
             },
-            'MaxCount': num_instance,
-            'MinCount': num_instance
+            'MaxCount': COUNT,
+            'MinCount': COUNT
         }
         resp = self.ec2.run_instances( ** args)
         list_instance = []
@@ -40,7 +40,7 @@ class Platform(Infrastructure):
         
         # collect info to return
         resp = self.ec2.describe_instances(InstanceIds=list_instance)
-        _return = {}
+        _return = []
         
         _continue = True
         _continue = _continue and ('Reservations' in resp)
@@ -48,8 +48,12 @@ class Platform(Infrastructure):
         _continue = _continue and ('Instances' in resp['Reservations'][0])
         
         if _continue == True:
-            for obj in resp['Reservations'][0]['Instances']:
-                _return[obj['InstanceId']] = obj['PublicDnsName']
+            for instance in resp['Reservations'][0]['Instances']:
+                obj = {
+                    'KEY': instance['InstanceId'], 
+                    'HOST': instance['PublicDnsName'],
+                }
+                _return.append(obj)
             
         return _return
     
