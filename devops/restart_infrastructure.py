@@ -3,6 +3,7 @@ from infrastructure import platform_aws as provider
 from infrastructure.polling import Polling
 import json
 import os
+from termcolor import colored
 from util import date
 from util import multi_thread
 from util import project_fs
@@ -27,13 +28,16 @@ def main():
     cloud = provider.Platform(settings)
     infrastructure = assign_roles(cloud.create_server(settings['Count']))
     project_fs.upsert_file('infrastructure.json', json.dumps(infrastructure, indent=4))
+    cloud.list_saltmaster = array_column(infrastructure['saltmaster'], 'IP')
+    cloud.id_file = "mserrano-stage.pem"
     
     all_instance = infrastructure['webserver'] + infrastructure['saltmaster']
-    list_host = array_column(all_instance, 'HOST')
+    list_host = array_column(all_instance, 'IP')
     authenticate_all_host(list_host)
-    
+
     install_saltstack(cloud, infrastructure)
-    configure_saltstack(cloud, infrastructure)
+    configure_minions(cloud, infrastructure)
+    install_webservers(cloud, infrastructure)
 
     stopwatch.output_report()
     
@@ -50,21 +54,31 @@ def assign_roles(list_instance):
     return _return
 
 def install_saltstack(cloud, infrastructure):
-    id_file = "mserrano-stage.pem"
     runner = multi_thread.Runner()
     for obj in infrastructure['saltmaster']:
-        target_args = (obj['HOST'], cloud.recipe_saltmaster, id_file,)
+        target_args = (obj['IP'], cloud.recipe('saltstack_master'), cloud.id_file, )
         runner.add_task(name=obj['KEY'], target=ssh.call, args=target_args)
     for obj in infrastructure['webserver']:
-        target_args = (obj['HOST'], cloud.recipe_webserver, id_file,)
+        target_args = (obj['IP'], cloud.recipe('saltstack_minion'), cloud.id_file, )
         runner.add_task(name=obj['KEY'], target=ssh.call, args=target_args)
     runner.invoke_all_and_wait()
-
-def configure_saltstack(cloud, infrastructure):
-    ip_saltmaster = infrastructure['saltmaster'][0]['IP']
+    print colored('  ...DONE', 'cyan') + ' (Saltstack Installed)'
     
-    print ip_saltmaster
-    pass
+def configure_minions(cloud, infrastructure):
+    runner = multi_thread.Runner()
+    for obj in infrastructure['webserver']:
+        target_args = (obj['IP'], cloud.recipe('configure_minion'), cloud.id_file, )
+        runner.add_task(name=obj['KEY'], target=ssh.call, args=target_args)
+    runner.invoke_all_and_wait()
+    print colored('  ...DONE', 'cyan') + ' (Minions Configured)'
+    
+def install_webservers(cloud, infrastructure):
+    runner = multi_thread.Runner()
+    for obj in infrastructure['saltmaster']:
+        target_args = (obj['IP'], cloud.recipe('setup_webserver'), cloud.id_file, )
+        runner.add_task(name=obj['KEY'], target=ssh.call, args=target_args)
+    runner.invoke_all_and_wait()
+    print colored('  ...DONE', 'cyan') + ' (Webservers Setup)'
     
 def authenticate_all_host(list_host):
     authentication = Polling(2, 'Adding fingerprints to ~/ssh/known_hosts...', '...DONE')
