@@ -11,17 +11,21 @@ class Platform(Infrastructure):
     # =-=-=--=---=-----=--------=-------------=
     # Functions
     # ----------------------------------------=
-    def __init__(self):
+    def __init__(self, settings):
+        self.settings = settings
         self.ec2 = boto3.client('ec2')
-        self.system_status_ok = self.ec2.get_waiter('system_status_ok')
         Infrastructure.__init__(self)
     
     def create_server(self, COUNT):
+        """
+        Spin up a vanilla Linux instance
+            :param COUNT - number of instances to spin up
+        """
         # create the instances
         args = {
             'LaunchTemplate': {
-                'LaunchTemplateName': 'stage_WebServer',
-                'Version': '4'
+                'LaunchTemplateName': self.settings['Template'],
+                'Version': self.settings['Version']
             },
             'MaxCount': COUNT,
             'MinCount': COUNT
@@ -49,16 +53,20 @@ class Platform(Infrastructure):
         
         if _continue == True:
             for instance in resp['Reservations'][0]['Instances']:
-                obj = {
-                    'KEY': instance['InstanceId'], 
-                    'HOST': instance['PublicDnsName'],
-                }
-                _return.append(obj)
+                _return.append(self.collect_info(instance))
             
         return _return
     
+    def collect_info(self, OBJ):
+        return {
+            'KEY': OBJ['InstanceId'],
+            'HOST': OBJ['PublicDnsName'],
+            'IP': OBJ['PublicIpAddress']
+        }
+    
     def remove_server(self, KEY):
         """
+        Destroy a specified Linux instance
             :param KEY - list or string, of instance(s) to be terminated
         """
         list_key = [KEY]

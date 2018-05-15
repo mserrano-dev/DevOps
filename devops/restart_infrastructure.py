@@ -15,10 +15,17 @@ from util.array_phpfill import *
 # Garbage collect remaining servers if all tests passing.
 # ============================================================================ #
 def main():
+    settings = {
+        # infrastructure settings
+        'Count': 3,
+        # aws specific settings
+        'Template': 'stage_WebServer',
+        'Version': '4',
+    }
     stopwatch = timer.Stopwatch()
 
-    cloud = provider.Platform()
-    infrastructure = assign_roles(cloud.create_server(3))
+    cloud = provider.Platform(settings)
+    infrastructure = assign_roles(cloud.create_server(settings['Count']))
     project_fs.upsert_file('infrastructure.json', json.dumps(infrastructure, indent=4))
     
     all_instance = infrastructure['webserver'] + infrastructure['saltmaster']
@@ -46,40 +53,44 @@ def install_saltstack(cloud, infrastructure):
     id_file = "mserrano-stage.pem"
     runner = multi_thread.Runner()
     for obj in infrastructure['saltmaster']:
-        runner.add_task(name=obj['KEY'], target=ssh.call, args=(obj['HOST'], cloud.recipe_saltmaster, id_file,))
+        target_args = (obj['HOST'], cloud.recipe_saltmaster, id_file,)
+        runner.add_task(name=obj['KEY'], target=ssh.call, args=target_args)
     for obj in infrastructure['webserver']:
-        runner.add_task(name=obj['KEY'], target=ssh.call, args=(obj['HOST'], cloud.recipe_webserver, id_file,))
+        target_args = (obj['HOST'], cloud.recipe_webserver, id_file,)
+        runner.add_task(name=obj['KEY'], target=ssh.call, args=target_args)
     runner.invoke_all_and_wait()
 
 def configure_saltstack(cloud, infrastructure):
+    ip_saltmaster = infrastructure['saltmaster'][0]['IP']
+    
+    print ip_saltmaster
     pass
     
-def authenticate_all_host(list_instance):
+def authenticate_all_host(list_host):
     authentication = Polling(2, 'Adding fingerprints to ~/ssh/known_hosts...', '...DONE')
     authentication.register_polling_fn(ssh.add_fingerprint)
-    authentication.register_resp_parser_fn(confirm_success, {'list_instance': list_instance})
-    authentication.register_resp_status_fn(report_progress, {'list_instance': list_instance})
-    authentication.wait({'LIST_HOST':list_instance})
+    authentication.register_resp_parser_fn(confirm_success, {'list_host': list_host})
+    authentication.register_resp_status_fn(report_progress, {'list_host': list_host})
+    authentication.wait({'LIST_HOST':list_host})
     
 # =-=-=--=---=-----=--------=-------------=
 # Helpers
 # ----------------------------------------=
-def confirm_success(resp, list_instance):
+def confirm_success(resp, list_host):
     _return = True
-    if resp.count('\n') == (len(list_instance) * 3):
+    if resp.count('\n') == (len(list_host) * 3):
         out_file = open("%s/.ssh/known_hosts" % os.path.expanduser("~"), "a")
         out_file.write(resp)
     else:
         _return = False
-        
     return _return
 
-def report_progress(resp, list_instance):
+def report_progress(resp, list_host):
     result = resp.count('\n') / 3
-    if result == len(list_instance):
-        _return = 'Success! %d/%d keys collected. Permanently adding to known_hosts..' % (result, len(list_instance))
+    if result == len(list_host):
+        _return = 'Success! %d/%d keys collected. Permanently adding to known_hosts..' % (result, len(list_host))
     else:
-        _return = 'Failed.. %d/%d. Trying again' % (result, len(list_instance))
+        _return = 'Failed.. %d/%d. Trying again' % (result, len(list_host))
     return _return
 
 main() # start script
