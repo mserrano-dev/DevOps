@@ -30,23 +30,35 @@ class Infrastructure(object):
         'setup_webserver': [
             'sudo salt-key --list-all',
             'sudo salt-key --accept-all -y',
-            'sleep 30',
-            "sudo salt '*' cmd.run 'sudo apt-get install cowsay -y'",
-            "sudo salt '*' cmd.run '/usr/games/cowsay \"William is the Coolest!!\"'",
-        ]
+            "sleep 6",
+            "sudo salt '*' cmd.run 'sudo mkdir -p /media/DEV/workspace/'",
+            "sudo salt '*' cmd.run 'sudo mkdir -p /var/www/'",
+            "sudo salt '*' git.clone /media/DEV/workspace/DevOps https://github.com/mserrano-dev/DevOps.git",
+            "sudo salt '*' git.clone /media/DEV/workspace/LAB-MSERRANO https://github.com/mserrano-dev/LAB-MSERRANO.git",
+            "sudo salt '*' cmd.run 'sudo chown -R www-data:www-data /media/DEV/workspace'",
+            "sudo salt '*' cmd.run 'sudo ln -s /media/DEV/workspace/LAB-MSERRANO/ /var/www/LAB.NET'",
+        ],
     }
-    __recipe = {
-        'saltstack_master': ['update', 'saltstack', 'master'],
-        'saltstack_minion': ['update', 'saltstack', 'minion'],
-        'configure_minion': ['sleep', '__minion_config()'],
-        'setup_webserver': ['sleep', 'setup_webserver'],
-    }
+    
+    def minion_config(self):
+        _return = ["sudo bash -c \"echo master: >> /etc/salt/minion\""]
+        for ip_saltmaster in self.list_saltmaster:
+            _return.append("sudo bash -c \"echo \ \ - " + ip_saltmaster + " >> /etc/salt/minion\"")
+        _return.append("sudo service salt-minion restart")
+        _return.append("sudo service salt-minion status")
         
+        return _return
+    
     # =-=-=--=---=-----=--------=-------------=
     # Functions
     # ----------------------------------------=
     def __init__(self):
-        pass
+        self.__recipe = {
+            'saltstack_master': ['update', 'saltstack', 'master'],
+            'saltstack_minion': ['update', 'saltstack', 'minion'],
+            'configure_minion': ['sleep', '__minion_config()'],
+            'setup_webserver': ['sleep', 'setup_webserver'],
+        }
     
     @abstractmethod
     def create_server(self):
@@ -80,14 +92,6 @@ class Infrastructure(object):
     # =-=-=--=---=-----=--------=-------------=
     # Helpers
     # ----------------------------------------=
-    def minion_config(self):
-        _return = ["sudo bash -c \"echo master: >> /etc/salt/minion\""]
-        for ip_saltmaster in self.list_saltmaster:
-            _return.append("sudo bash -c \"echo \ \ - " + ip_saltmaster + " >> /etc/salt/minion\"")
-        _return.append("sudo service salt-minion restart")
-        
-        return _return
-    
     def recipe(self, recipe_name):
         _return = []
         for key in self.__recipe[recipe_name]:
