@@ -4,6 +4,12 @@ import time
 # ============================================================================ #
 # Time-related helper functions
 # ============================================================================ #
+def sleep(duration):
+    """
+    Pause execution for specified duration
+    """
+    time.sleep(duration)
+    
 def time_string(delta, hours, minutes, seconds, delim, always_show=True):
     """
     Convert seconds into the format specified

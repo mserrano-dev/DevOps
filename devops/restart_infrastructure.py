@@ -3,6 +3,7 @@ from infrastructure import platform_aws as provider
 from infrastructure.polling import Polling
 import json
 import os
+import sys
 from termcolor import colored
 from util import date
 from util import multi_thread
@@ -24,7 +25,7 @@ def main():
         'Version': '4',
     }
     stopwatch = timer.Stopwatch()
-
+    
     cloud = provider.Platform(settings)
     infrastructure = assign_roles(cloud.create_server(settings['Count']))
     project_fs.upsert_file('infrastructure.json', json.dumps(infrastructure, indent=4))
@@ -53,33 +54,6 @@ def assign_roles(list_instance):
     }
     return _return
 
-def install_saltstack(cloud, infrastructure):
-    runner = multi_thread.Runner()
-    for obj in infrastructure['saltmaster']:
-        target_args = (obj['IP'], cloud.recipe('saltstack_master'), cloud.id_file, )
-        runner.add_task(name=obj['KEY'], target=ssh.call, args=target_args)
-    for obj in infrastructure['webserver']:
-        target_args = (obj['IP'], cloud.recipe('saltstack_minion'), cloud.id_file, )
-        runner.add_task(name=obj['KEY'], target=ssh.call, args=target_args)
-    runner.invoke_all_and_wait()
-    print colored('  ...DONE', 'cyan') + ' (Saltstack Installed)'
-    
-def configure_minions(cloud, infrastructure):
-    runner = multi_thread.Runner()
-    for obj in infrastructure['webserver']:
-        target_args = (obj['IP'], cloud.recipe('configure_minion'), cloud.id_file, )
-        runner.add_task(name=obj['KEY'], target=ssh.call, args=target_args)
-    runner.invoke_all_and_wait()
-    print colored('  ...DONE', 'cyan') + ' (Minions Configured)'
-    
-def install_webservers(cloud, infrastructure):
-    runner = multi_thread.Runner()
-    for obj in infrastructure['saltmaster']:
-        target_args = (obj['IP'], cloud.recipe('setup_webserver'), cloud.id_file, )
-        runner.add_task(name=obj['KEY'], target=ssh.call, args=target_args)
-    runner.invoke_all_and_wait()
-    print colored('  ...DONE', 'cyan') + ' (Webservers Setup)'
-    
 def authenticate_all_host(list_host):
     authentication = Polling(2, 'Adding fingerprints to ~/ssh/known_hosts...', '...DONE')
     authentication.register_polling_fn(ssh.add_fingerprint)
@@ -87,9 +61,28 @@ def authenticate_all_host(list_host):
     authentication.register_resp_status_fn(report_progress, {'list_host': list_host})
     authentication.wait({'LIST_HOST':list_host})
     
+def install_saltstack(cloud, infrastructure):
+    runner = multi_thread.Runner()
+    runner.add_recipe_on_each(cloud, infrastructure['saltmaster'], 'saltstack_master')
+    runner.add_recipe_on_each(cloud, infrastructure['webserver'], 'saltstack_minion')
+    runner.invoke_all_and_wait()
+    output_done_msg('Saltstack Installed')
+    
+def configure_minions(cloud, infrastructure):
+    run_on_each(cloud, infrastructure['webserver'], 'configure_minion', 'Minions Configured')
+    
+def install_webservers(cloud, infrastructure):
+    run_on_each(cloud, infrastructure['saltmaster'], 'setup_webserver', 'Webservers Setup')
+    
 # =-=-=--=---=-----=--------=-------------=
 # Helpers
 # ----------------------------------------=
+def run_on_each(cloud, list_instance, recipe, msg):
+    runner = multi_thread.Runner()
+    runner.add_recipe_on_each(cloud, list_instance, recipe)
+    runner.invoke_all_and_wait()
+    output_done_msg(msg)
+    
 def confirm_success(resp, list_host):
     _return = True
     if resp.count('\n') == (len(list_host) * 3):
@@ -106,5 +99,11 @@ def report_progress(resp, list_host):
     else:
         _return = 'Failed.. %d/%d. Trying again' % (result, len(list_host))
     return _return
-
+    
+def output_done_msg(msg):
+    print colored('  >', 'cyan', attrs=['blink']) + colored(' ...DONE', 'cyan') + ' (%s)' % msg, '\r',
+    sys.stdout.flush()
+    timer.sleep(1)
+    print colored('  > ...DONE', 'cyan') + ' (%s)' % msg
+    
 main() # start script

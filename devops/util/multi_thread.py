@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import ssh
 from threading import Thread
 
 # ============================================================================ #
@@ -16,6 +17,14 @@ class Runner():
         Add thread to queue
         """
         self.__list_thread.append(Thread(name=name, target=target, args=args))
+    
+    def add_recipe_on_each(self, cloud, list_instance, recipe):
+        """
+        Enqueue an ssh call to each instance
+        """
+        for obj in list_instance:
+            target_args = (obj['IP'], cloud.recipe(recipe), cloud.id_file, )
+            self.add_task(name=obj['KEY'], target=ssh.call, args=target_args)
     
     def invoke_all_and_wait(self):
         """

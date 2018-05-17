@@ -31,6 +31,7 @@ class Infrastructure(object):
             "sudo bash -c 'echo auto_accept: True >> /etc/salt/master'",
             "sudo pkill salt-master",
             "sudo salt-master -d",
+            "sleep 10",
         ],
         "setup_minion_filesystem": [
             "sudo salt '*' cmd.run 'sudo mkdir -p /media/DEV/workspace/'",
@@ -47,7 +48,7 @@ class Infrastructure(object):
         for ip_saltmaster in self.list_saltmaster:
             _return.append("sudo bash -c \"echo \ \ - " + ip_saltmaster + " >> /etc/salt/minion\"")
         _return.append("sudo service salt-minion restart")
-        _return.append("sudo service salt-minion status")
+        _return.append("sudo service salt-minion status") 
         
         return _return
     
