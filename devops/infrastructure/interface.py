@@ -33,10 +33,15 @@ class Infrastructure(object):
             "sudo salt-master -d",
             "sleep 10",
         ],
+        "setup_master_filesystem": [
+            "sudo mkdir -p /media/DEV/workspace/",
+            "sudo git clone https://github.com/mserrano-dev/DevOps.git /media/DEV/workspace/DevOps",
+            "sudo ln -s /media/DEV/workspace/DevOps/highstate /srv/salt",
+        ],
         "setup_minion_filesystem": [
             "sudo salt '*' cmd.run 'sudo mkdir -p /media/DEV/workspace/'",
             "sudo salt '*' cmd.run 'sudo mkdir -p /var/www/'",
-            "sudo salt '*' git.clone /media/DEV/workspace/DevOps https://github.com/mserrano-dev/DevOps.git",
+            "sudo salt '*' git.clone /media/DEV/workspace/Configuration https://github.com/mserrano-dev/Configuration.git",
             "sudo salt '*' git.clone /media/DEV/workspace/LAB-MSERRANO https://github.com/mserrano-dev/LAB-MSERRANO.git",
             "sudo salt '*' cmd.run 'sudo chown -R www-data:www-data /media/DEV/workspace'",
             "sudo salt '*' cmd.run 'sudo ln -s /media/DEV/workspace/LAB-MSERRANO/ /var/www/LAB.NET'",
@@ -47,6 +52,7 @@ class Infrastructure(object):
         _return = ["sudo bash -c \"echo master: >> /etc/salt/minion\""]
         for ip_saltmaster in self.list_saltmaster:
             _return.append("sudo bash -c \"echo \ \ - " + ip_saltmaster + " >> /etc/salt/minion\"")
+        _return.append("sudo bash -c \"echo startup_states: highstate >> /etc/salt/minion\"")
         _return.append("sudo service salt-minion restart")
         _return.append("sudo service salt-minion status") 
         
@@ -60,7 +66,11 @@ class Infrastructure(object):
             'saltstack_master': ['update', 'saltstack', 'install_as_master'],
             'saltstack_minion': ['update', 'saltstack', 'install_as_minion'],
             'configure_minion': ['sleep', '__do_minion_config()'],
-            'setup_webserver': ['accept_minions', 'setup_minion_filesystem'],
+            'setup_webserver': [
+                'setup_master_filesystem', 
+                'accept_minions', 
+                'setup_minion_filesystem'
+            ],
         }
     
     @abstractmethod
