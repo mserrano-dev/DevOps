@@ -11,26 +11,28 @@ class Infrastructure(object):
     # Settings
     # ----------------------------------------=
     __list_cmd = {
-        'update': [
-            'sudo apt-get update -y',
-            'sudo apt-get upgrade -y',
+        "update": [
+            "sudo apt-get update -y",
+            "sudo apt-get upgrade -y",
         ],
-        'sleep': [
-            'sleep 2',
+        "sleep": [
+            "sleep 2",
         ],
-        'saltstack': [
-            'sudo apt-get install salt-api salt-cloud salt-ssh salt-syndic -y',
+        "saltstack": [
+            "sudo apt-get install salt-api salt-cloud salt-ssh salt-syndic -y",
         ],
-        'master': [
-            'sudo apt-get install salt-master -y',
+        "install_as_master": [
+            "sudo apt-get install salt-master -y",
         ],
-        'minion': [
-            'sudo apt-get install salt-minion -y',
+        "install_as_minion": [
+            "sudo apt-get install salt-minion -y",
         ],
-        'setup_webserver': [
-            'sudo salt-key --list-all',
-            'sudo salt-key --accept-all -y',
-            "sleep 6",
+        "accept_minions": [
+            "sudo bash -c 'echo auto_accept: True >> /etc/salt/master'",
+            "sudo pkill salt-master",
+            "sudo salt-master -d",
+        ],
+        "setup_minion_filesystem": [
             "sudo salt '*' cmd.run 'sudo mkdir -p /media/DEV/workspace/'",
             "sudo salt '*' cmd.run 'sudo mkdir -p /var/www/'",
             "sudo salt '*' git.clone /media/DEV/workspace/DevOps https://github.com/mserrano-dev/DevOps.git",
@@ -40,7 +42,7 @@ class Infrastructure(object):
         ],
     }
     
-    def minion_config(self):
+    def do_minion_config(self):
         _return = ["sudo bash -c \"echo master: >> /etc/salt/minion\""]
         for ip_saltmaster in self.list_saltmaster:
             _return.append("sudo bash -c \"echo \ \ - " + ip_saltmaster + " >> /etc/salt/minion\"")
@@ -54,10 +56,10 @@ class Infrastructure(object):
     # ----------------------------------------=
     def __init__(self):
         self.__recipe = {
-            'saltstack_master': ['update', 'saltstack', 'master'],
-            'saltstack_minion': ['update', 'saltstack', 'minion'],
-            'configure_minion': ['sleep', '__minion_config()'],
-            'setup_webserver': ['sleep', 'setup_webserver'],
+            'saltstack_master': ['update', 'saltstack', 'install_as_master'],
+            'saltstack_minion': ['update', 'saltstack', 'install_as_minion'],
+            'configure_minion': ['sleep', '__do_minion_config()'],
+            'setup_webserver': ['accept_minions', 'setup_minion_filesystem'],
         }
     
     @abstractmethod
