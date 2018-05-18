@@ -27,15 +27,6 @@ class Infrastructure(object):
         "install_as_minion": [
             "sudo apt-get install salt-minion -y",
         ],
-        "accept_minions": [
-            "sudo bash -c 'echo auto_accept: True >> /etc/salt/master'",
-            "sudo bash -c 'echo file_roots: >> /etc/salt/master'",
-            "sudo bash -c 'echo \ \ base: >> /etc/salt/master'",
-            "sudo bash -c 'echo \ \ \ \ - /srv/salt >> /etc/salt/master'",
-            "sudo bash -c 'echo \ \ \ \ - /srv/projects >> /etc/salt/master'",
-            "sudo pkill salt-master",
-            "sudo salt-master -d",
-        ],
         "setup_master_filesystem": [
             "sudo git clone https://github.com/mserrano-dev/DevOps.git /media/DevOps/",
             "sudo git clone https://github.com/mserrano-dev/LAB-MSERRANO.git /srv/projects/workspace/LAB.NET",
@@ -43,6 +34,11 @@ class Infrastructure(object):
             "sudo git clone https://github.com/mserrano-dev/WWW-MSERRANO.git /srv/projects/workspace/WWW.NET",
             "sudo git clone https://github.com/mserrano-dev/DOCS-MSERRANO.git /srv/projects/workspace/DOCS.NET",
             "sudo ln -s /media/DevOps/highstate /srv/salt",
+        ],
+        "accept_minions": [
+            "sudo cp /media/DevOps/settings/master.yml /etc/salt/master",
+            "sudo pkill salt-master",
+            "sudo salt-master -d",
         ],
     }
     
