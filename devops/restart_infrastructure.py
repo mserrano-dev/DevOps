@@ -31,6 +31,7 @@ def main():
     project_fs.upsert_file('infrastructure.json', json.dumps(infrastructure, indent=4))
     cloud.list_saltmaster = array_column(infrastructure['saltmaster'], 'IP')
     cloud.id_file = "mserrano-stage.pem"
+    cloud.minion_config = project_fs.read_file('settings/minion.yml')
     
     all_instance = infrastructure['webserver'] + infrastructure['saltmaster']
     list_host = array_column(all_instance, 'IP')

@@ -43,10 +43,12 @@ class Infrastructure(object):
     }
     
     def do_minion_config(self):
-        _return = ["sudo bash -c \"echo master: >> /etc/salt/minion\""]
+        _return = ["sudo bash -c \"printf 'master:\\n' >> /etc/salt/minion\""]
         for ip_saltmaster in self.list_saltmaster:
-            _return.append("sudo bash -c \"echo \ \ - " + ip_saltmaster + " >> /etc/salt/minion\"")
-        _return.append("sudo bash -c \"echo startup_states: highstate >> /etc/salt/minion\"")
+            _return.append("sudo bash -c \"printf '  - " + ip_saltmaster + "\\n' >> /etc/salt/minion\"")
+        
+        escape_single_quote = self.minion_config.encode('string_escape').replace("\\'", "'\\''")
+        _return.append("sudo bash -c \"printf '%s' >> /etc/salt/minion\"" % escape_single_quote)
         _return.append("sudo service salt-minion restart")
         _return.append("sudo service salt-minion status") 
         
