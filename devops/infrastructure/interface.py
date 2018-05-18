@@ -1,5 +1,6 @@
 #!/usr/bin/python
 from abc import *
+import bash_arg_helper
 
 # ============================================================================ #
 # Agnostic of Cloud Service Provider
@@ -43,12 +44,14 @@ class Infrastructure(object):
     }
     
     def do_minion_config(self):
-        _return = ["sudo bash -c \"printf 'master:\\n' >> /etc/salt/minion\""]
-        for ip_saltmaster in self.list_saltmaster:
-            _return.append("sudo bash -c \"printf '  - " + ip_saltmaster + "\\n' >> /etc/salt/minion\"")
-        
-        escape_single_quote = self.minion_config.encode('string_escape').replace("\\'", "'\\''")
-        _return.append("sudo bash -c \"printf '%s' >> /etc/salt/minion\"" % escape_single_quote)
+        config = bash_arg_helper.SingleLineFile()
+        config.add_line("master:")
+        for ip_saltmaster in self.list_saltmaster: # add each saltmaster's IP
+            config.add_line("  - " + ip_saltmaster)
+        config.append_yaml_file(self.minion_config) # append the minion.yml file
+
+        _return = []
+        _return.append("sudo bash -c \"printf '%s' >> /etc/salt/minion\"" % config.get_file())
         _return.append("sudo service salt-minion restart")
         _return.append("sudo service salt-minion status") 
         
