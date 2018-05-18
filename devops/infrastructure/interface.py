@@ -29,22 +29,20 @@ class Infrastructure(object):
         ],
         "accept_minions": [
             "sudo bash -c 'echo auto_accept: True >> /etc/salt/master'",
+            "sudo bash -c 'echo file_roots: >> /etc/salt/master'",
+            "sudo bash -c 'echo \ \ base: >> /etc/salt/master'",
+            "sudo bash -c 'echo \ \ \ \ - /srv/salt >> /etc/salt/master'",
+            "sudo bash -c 'echo \ \ \ \ - /srv/projects >> /etc/salt/master'",
             "sudo pkill salt-master",
             "sudo salt-master -d",
-            "sleep 10",
         ],
         "setup_master_filesystem": [
-            "sudo mkdir -p /media/DEV/workspace/",
-            "sudo git clone https://github.com/mserrano-dev/DevOps.git /media/DEV/workspace/DevOps",
-            "sudo ln -s /media/DEV/workspace/DevOps/highstate /srv/salt",
-        ],
-        "setup_minion_filesystem": [
-            "sudo salt '*' cmd.run 'sudo mkdir -p /media/DEV/workspace/'",
-            "sudo salt '*' cmd.run 'sudo mkdir -p /var/www/'",
-            "sudo salt '*' git.clone /media/DEV/workspace/Configuration https://github.com/mserrano-dev/Configuration.git",
-            "sudo salt '*' git.clone /media/DEV/workspace/LAB-MSERRANO https://github.com/mserrano-dev/LAB-MSERRANO.git",
-            "sudo salt '*' cmd.run 'sudo chown -R www-data:www-data /media/DEV/workspace'",
-            "sudo salt '*' cmd.run 'sudo ln -s /media/DEV/workspace/LAB-MSERRANO/ /var/www/LAB.NET'",
+            "sudo git clone https://github.com/mserrano-dev/DevOps.git /media/DevOps/",
+            "sudo git clone https://github.com/mserrano-dev/LAB-MSERRANO.git /srv/projects/workspace/LAB.NET",
+            "sudo git clone https://github.com/mserrano-dev/WS-MSERRANO.git /srv/projects/workspace/WS.NET",
+            "sudo git clone https://github.com/mserrano-dev/WWW-MSERRANO.git /srv/projects/workspace/WWW.NET",
+            "sudo git clone https://github.com/mserrano-dev/DOCS-MSERRANO.git /srv/projects/workspace/DOCS.NET",
+            "sudo ln -s /media/DevOps/highstate /srv/salt",
         ],
     }
     
@@ -66,11 +64,7 @@ class Infrastructure(object):
             'saltstack_master': ['update', 'saltstack', 'install_as_master'],
             'saltstack_minion': ['update', 'saltstack', 'install_as_minion'],
             'configure_minion': ['sleep', '__do_minion_config()'],
-            'setup_webserver': [
-                'setup_master_filesystem', 
-                'accept_minions', 
-                'setup_minion_filesystem'
-            ],
+            'setup_webserver': ['setup_master_filesystem', 'accept_minions'],
         }
     
     @abstractmethod
@@ -89,7 +83,6 @@ class Infrastructure(object):
             :param OBJ - instance to get info from
         """
         return """ @returns <dict>{KEY:<string>,
-                                   HOST:<string>,
                                    IP:<string>} on success,
                             <bool>False on failure """
     
