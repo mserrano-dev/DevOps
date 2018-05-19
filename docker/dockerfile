@@ -1,0 +1,7 @@
+FROM ubuntu:17.10
+
+RUN apt-get update \
+    && apt-get install -y apache2 php libapache2-mod-php php-mcrypt php-mysql \
+    && rm -rf /var/lib/apt/lists/*
+
+ADD . /var/www
