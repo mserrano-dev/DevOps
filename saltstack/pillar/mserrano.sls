@@ -1,7 +1,7 @@
 apps:
-  LAB.NET: true
-  WS.NET: true
-  WWW.NET: true
-  DOCS.NET: true
-  BLOG.NET: false
-  TIPS.NET: false
+  LAB.NET: True
+  WS.NET: True
+  WWW.NET: True
+  DOCS.NET: True
+  BLOG.NET: False
+  TIPS.NET: False
