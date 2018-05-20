@@ -8,8 +8,18 @@ docker:
     - require:
       - pkg: python-pip
 
-/var/www:
+/media/STAGE:
   file.recurse:
     - source: salt://workspace
     - user: www-data
     - group: www-data
+
+{% for app, enabled in pillar.get('apps', {}).items() %}
+{% if enabled == 'true' %}
+/var/www/{{app}}:
+  file.symlink:
+    - target: /media/STAGE/webserver/{{project_name}}
+    - require:
+      - file: /media/STAGE
+{% endif %}
+{% endfor %}
