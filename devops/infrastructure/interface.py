@@ -1,6 +1,7 @@
 #!/usr/bin/python
 from abc import *
-import bash_arg_helper
+from util import project_fs
+from util.bash_arg import *
 
 # ============================================================================ #
 # Agnostic of Cloud Service Provider
@@ -12,21 +13,19 @@ class Infrastructure(object):
     # Settings
     # ----------------------------------------=
     __list_cmd = {
-        "update": [
-            "sudo apt-get update -y",
-            "sudo apt-get upgrade -y",
-        ],
         "sleep": [
             "sleep 2",
         ],
-        "saltstack": [
-            "sudo apt-get install salt-api salt-cloud salt-ssh salt-syndic -y",
+        "update_saltstack": [
+            "wget -O - https://repo.saltstack.com/apt/debian/9/amd64/archive/2018.3.0/SALTSTACK-GPG-KEY.pub | sudo apt-key add -",
+            "sudo bash -c \"printf 'deb http://repo.saltstack.com/apt/debian/9/amd64/archive/2018.3.0 stretch main' >> /etc/apt/sources.list.d/saltstack.list\"",
+            "sudo apt-get update -y",
         ],
         "install_as_master": [
-            "sudo apt-get install salt-master -y",
+            "sudo apt-get install -y salt-api salt-syndic salt-master",
         ],
         "install_as_minion": [
-            "sudo apt-get install salt-minion -y",
+            "sudo apt-get install -y salt-api salt-syndic salt-minion",
         ],
         "setup_master_filesystem": [
             "sudo git clone https://github.com/mserrano-dev/DevOps.git /media/DevOps/",
@@ -34,21 +33,23 @@ class Infrastructure(object):
             "sudo git clone https://github.com/mserrano-dev/WS-MSERRANO.git /srv/projects/workspace/WS.NET",
             "sudo git clone https://github.com/mserrano-dev/WWW-MSERRANO.git /srv/projects/workspace/WWW.NET",
             "sudo git clone https://github.com/mserrano-dev/DOCS-MSERRANO.git /srv/projects/workspace/DOCS.NET",
-            "sudo ln -s /media/DevOps/highstate /srv/salt",
+            "sudo ln -s /media/DevOps/docker/dockerfile /srv/projects/workspace/dockerfile",
+            "sudo ln -s /media/DevOps/saltstack/highstate /srv/salt",
         ],
         "accept_minions": [
-            "sudo cp /media/DevOps/settings/master.yml /etc/salt/master",
-            "sudo pkill salt-master",
+            "sudo cp /media/DevOps/saltstack/settings/master.yml /etc/salt/master",
+            "while sudo pkill salt-master; do sleep 0.2; done",
+            wait_until_complete("sudo pkill salt-master"),
             "sudo salt-master -d",
         ],
     }
     
     def do_minion_config(self):
-        config = bash_arg_helper.SingleLineFile()
+        config = SingleLineFile()
         config.add_line("master:")
         for ip_saltmaster in self.list_saltmaster: # add each saltmaster's IP
             config.add_line("  - " + ip_saltmaster)
-        config.append_yaml_file(self.minion_config) # append the minion.yml file
+        config.append_yaml_file(project_fs.read_file('saltstack/settings/minion.yml')) # append the minion.yml file
 
         _return = []
         _return.append("sudo bash -c \"printf '%s' >> /etc/salt/minion\"" % config.get_file())
@@ -62,8 +63,8 @@ class Infrastructure(object):
     # ----------------------------------------=
     def __init__(self):
         self.__recipe = {
-            'saltstack_master': ['update', 'saltstack', 'install_as_master'],
-            'saltstack_minion': ['update', 'saltstack', 'install_as_minion'],
+            'saltstack_master': ['update_saltstack', 'install_as_master'],
+            'saltstack_minion': ['update_saltstack', 'install_as_minion'],
             'configure_minion': ['sleep', '__do_minion_config()'],
             'setup_webserver': ['setup_master_filesystem', 'accept_minions'],
         }

@@ -1,8 +1,8 @@
 #!/usr/bin/python
 import boto3
 from infrastructure.interface import Infrastructure
-from infrastructure.polling import Polling
 import json
+from util.polling import Polling
 
 # ============================================================================ #
 # Infrastructure via Amazon Web Services
@@ -30,7 +30,7 @@ class Platform(Infrastructure):
             'MaxCount': COUNT,
             'MinCount': COUNT
         }
-        resp = self.ec2.run_instances( ** args)
+        resp = self.ec2.run_instances(** args)
         list_instance = []
         for obj in resp['Instances']:
             list_instance.append(obj['InstanceId'])
@@ -60,7 +60,6 @@ class Platform(Infrastructure):
     def collect_info(self, OBJ):
         return {
             'KEY': OBJ['InstanceId'],
-            'HOST': OBJ['PublicDnsName'],
             'IP': OBJ['PublicIpAddress']
         }
     

@@ -4,8 +4,9 @@
 # Bash Arg related helpers
 # ============================================================================ #
 class SingleLineFile():
-    __list_line = []
-
+    def __init__(self):
+        self.__list_line = []
+    
     def add_line(self, line):
         """
         Enqueue a string
@@ -24,3 +25,9 @@ class SingleLineFile():
         Return the composed file as a single line
         """
         return "\\n".join(self.__list_line)
+
+def wait_until_complete(cond):
+    """
+    Wait until condition is satisfied
+    """
+    return "while %s; do sleep 0.2; done" % cond

@@ -1,6 +1,5 @@
 #!/usr/bin/python
 from infrastructure import platform_aws as provider
-from infrastructure.polling import Polling
 import json
 import os
 import sys
@@ -11,6 +10,7 @@ from util import project_fs
 from util import ssh
 from util import timer
 from util.array_phpfill import *
+from util.polling import Polling
 
 # ============================================================================ #
 # Setup new saltmaster and webserver ec2 instances. 
