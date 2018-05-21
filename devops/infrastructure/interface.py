@@ -39,6 +39,9 @@ class Infrastructure(object):
             # Docker
             "sudo ln -s /media/DevOps/docker/dockerfile /srv/projects/workspace/webserver/dockerfile",
             "sudo ln -s /media/DevOps/docker/.dockerignore /srv/projects/workspace/webserver/.dockerignore",
+            # Apache2
+            "sudo git clone https://github.com/mserrano-dev/Configuration.git /media/Configuration",
+            "sudo ln -s /media/Configuration/apache/sites /srv/projects/workspace/sites",
             # WebServer
             "sudo git clone https://github.com/mserrano-dev/LAB-MSERRANO.git /srv/projects/workspace/webserver/LAB.NET",
             "sudo git clone https://github.com/mserrano-dev/WS-MSERRANO.git /srv/projects/workspace/webserver/WS.NET",

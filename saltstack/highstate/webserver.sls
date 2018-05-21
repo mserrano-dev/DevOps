@@ -8,24 +8,26 @@ docker:
     - require:
       - pkg: python-pip
 
-/media/STAGE/webserver/dockerfile:
+/media/STAGE/dockerfile:
   file.managed:
     - source: salt://workspace/webserver/dockerfile
-    - user: www-data
-    - group: www-data
     
-/media/STAGE/webserver/.dockerignore:
+/media/STAGE/.dockerignore:
   file.managed:
     - source: salt://workspace/webserver/.dockerignore
-    - user: www-data
-    - group: www-data
 
+/media/STAGE/sites: file.directory
+    
 {% for app, enabled in pillar.get('apps', {}).items() %}
 {% if enabled == True %}
+/media/STAGE/sites/{{app}}.conf:
+  file.managed:
+    - source: salt://workspace/sites/{{app}}.conf
+    - require:
+      - file: /media/STAGE/sites
+      
 /media/STAGE/webserver/{{app}}:
   file.recurse:
     - source: salt://workspace/webserver/{{app}}
-    - user: www-data
-    - group: www-data
 {% endif %}
 {% endfor %}
