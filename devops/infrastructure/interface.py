@@ -28,17 +28,22 @@ class Infrastructure(object):
             "sudo apt-get install -y salt-api salt-syndic salt-minion",
         ],
         "setup_master_filesystem": [
+            # DevOps
             "sudo git clone https://github.com/mserrano-dev/DevOps.git /media/DevOps/",
+            "sudo mkdir -p /srv/projects/workspace/webserver",
+            "sudo ln -s /media/DevOps/bin /srv/projects/workspace/bin",
+            "sudo ln -s /media/DevOps/devops /srv/projects/workspace/devops",
+            # SaltStack
+            "sudo ln -sf /media/DevOps/saltstack/highstate /srv/salt",
+            "sudo ln -sf /media/DevOps/saltstack/pillar /srv/pillar",
+            # Docker
+            "sudo ln -s /media/DevOps/docker/dockerfile /srv/projects/workspace/webserver/dockerfile",
+            "sudo ln -s /media/DevOps/docker/.dockerignore /srv/projects/workspace/webserver/.dockerignore",
+            # WebServer
             "sudo git clone https://github.com/mserrano-dev/LAB-MSERRANO.git /srv/projects/workspace/webserver/LAB.NET",
             "sudo git clone https://github.com/mserrano-dev/WS-MSERRANO.git /srv/projects/workspace/webserver/WS.NET",
             "sudo git clone https://github.com/mserrano-dev/WWW-MSERRANO.git /srv/projects/workspace/webserver/WWW.NET",
             "sudo git clone https://github.com/mserrano-dev/DOCS-MSERRANO.git /srv/projects/workspace/webserver/DOCS.NET",
-            "sudo ln -s /media/DevOps/docker/dockerfile /srv/projects/workspace/dockerfile",
-            "sudo ln -s /media/DevOps/docker/.dockerignore /srv/projects/workspace/.dockerignore",
-            "sudo ln -s /media/DevOps/saltstack/highstate /srv/salt",
-            "sudo ln -s /media/DevOps/saltstack/pillar /srv/pillar",
-            "sudo ln -s /media/DevOps/bin /srv/projects/workspace/bin",
-            "sudo ln -s /media/DevOps/devops /srv/projects/workspace/devops",
         ],
         "accept_minions": [
             "sudo cp /media/DevOps/saltstack/settings/master.yml /etc/salt/master",
