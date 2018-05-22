@@ -55,8 +55,9 @@ webserver:
 build_package:
   docker_container.running:
     - image: webserver:mserrano
-    - ports:
-      - 80/tcp:80
+    - skip_translate: True
+    - port_bindings: {'80/tcp': 80}
+    - publish_all_ports: True
     - replace: True
     - require:
       - docker_image: webserver
