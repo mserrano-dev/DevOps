@@ -53,8 +53,10 @@ webserver:
       - pkg: build_dependencies
  
 build_package:
-  docker_container.run:
+  docker_container.running:
     - image: webserver:mserrano
+    - ports:
+      - 80/tcp:80
     - replace: True
     - require:
       - docker_image: webserver

@@ -10,6 +10,6 @@ RUN apt-get update \
     && rm /etc/apache2/sites-enabled/000-default.conf \
     && service apache2 restart
     
-WORKDIR /etc/apache2
+EXPOSE 80/tcp
 
-EXPOSE 80
+CMD /usr/sbin/apache2ctl -D FOREGROUND
