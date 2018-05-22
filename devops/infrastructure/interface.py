@@ -34,8 +34,8 @@ class Infrastructure(object):
             "sudo ln -s /media/DevOps/bin /srv/projects/workspace/bin",
             "sudo ln -s /media/DevOps/devops /srv/projects/workspace/devops",
             # SaltStack
-            "sudo ln -sf /media/DevOps/saltstack/highstate /srv/salt",
-            "sudo ln -sf /media/DevOps/saltstack/pillar /srv/pillar",
+            "sudo ln -s /media/DevOps/saltstack/highstate /srv/salt",
+            "sudo ln -s /media/DevOps/saltstack/pillar /srv/pillar",
             # Docker
             "sudo ln -s /media/DevOps/docker/dockerfile /srv/projects/workspace/webserver/dockerfile",
             "sudo ln -s /media/DevOps/docker/.dockerignore /srv/projects/workspace/webserver/.dockerignore",
@@ -50,7 +50,6 @@ class Infrastructure(object):
         ],
         "accept_minions": [
             "sudo cp /media/DevOps/saltstack/settings/master.yml /etc/salt/master",
-            "while sudo pkill salt-master; do sleep 0.2; done",
             wait_until_complete("sudo pkill salt-master"),
             "sudo salt-master -d",
         ],

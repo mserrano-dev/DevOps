@@ -5,3 +5,5 @@ apps:
   DOCS.NET: True
   BLOG.NET: False
   TIPS.NET: False
+
+environment: STAGE
