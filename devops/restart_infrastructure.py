@@ -21,8 +21,8 @@ def main():
         # infrastructure settings
         'Count': 3,
         # aws specific settings
-        'Template': 'stage_WebServer',
-        'Version': '4',
+        'Template': 'ubuntu_18.04',
+        'Version': '1',
     }
     stopwatch = timer.Stopwatch()
     

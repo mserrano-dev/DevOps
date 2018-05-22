@@ -7,7 +7,7 @@ build_dependencies:
       - docker.io
 
 docker:
-  pip.installed:
+    pip.installed:
     - name: docker == 3.3.0
     - require:
       - pkg: build_dependencies
@@ -41,3 +41,20 @@ docker:
     - source: salt://workspace/webserver/{{ app }}
 {% endif %}
 {% endfor %}
+
+webserver:
+  docker_image.present:
+    - build: /media/STAGE
+    - tag: mserrano
+    - force: True
+    - dockerfile: dockerfile
+    - require:
+      - pip: docker
+      - pkg: build_dependencies
+ 
+build_package:
+  docker_container.run:
+    - image: webserver:mserrano
+    - replace: True
+    - require:
+      - docker_image: webserver
