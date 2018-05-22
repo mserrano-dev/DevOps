@@ -1,14 +1,16 @@
 {% set env = salt.pillar.get('environment') %}
 
-python-pip:
-  pkg:
-    - installed
+build_dependencies:
+  pkg.installed:
+    - pkgs:
+      - python-pip
+      - docker.io
 
 docker:
   pip.installed:
     - name: docker == 3.3.0
     - require:
-      - pkg: python-pip
+      - pkg: build_dependencies
 
 /media/{{ env }}: file.directory
 

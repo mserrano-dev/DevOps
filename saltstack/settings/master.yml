@@ -3,3 +3,4 @@ file_roots:
   base:
     - /srv/salt
     - /srv/projects
+timeout: 15
