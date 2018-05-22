@@ -10,15 +10,21 @@ docker:
     - require:
       - pkg: python-pip
 
+/media/{{ env }}: file.directory
+
+/media/{{ env }}/sites: file.directory
+
 /media/{{ env }}/dockerfile:
   file.managed:
     - source: salt://workspace/webserver/dockerfile
+    - require:
+      - file: /media/{{ env }}
 
 /media/{{ env }}/.dockerignore:
   file.managed:
     - source: salt://workspace/webserver/.dockerignore
-
-/media/{{ env }}/sites: file.directory
+    - require:
+      - file: /media/{{ env }}
 
 {% for app, enabled in pillar.get('apps', {}).items() %}
 {% if enabled == True %}
