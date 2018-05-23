@@ -36,6 +36,7 @@ class Infrastructure(object):
             "sudo ln -s /media/DevOps/devops /srv/projects/workspace/devops",
             # SaltStack
             "sudo ln -s /media/DevOps/saltstack/highstate /srv/salt",
+            "sudo ln -s /media/DevOps/saltstack/grains /srv/salt/_grains",
             "sudo ln -s /media/DevOps/saltstack/pillar /srv/pillar",
             "sudo ln -s /media/DevOps/saltstack/reactor /srv/reactor",
             # Docker
