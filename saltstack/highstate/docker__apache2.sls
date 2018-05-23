@@ -7,14 +7,10 @@
 /media/{{ env }}/dockerfile:
   file.managed:
     - source: salt://workspace/webserver/dockerfile
-    - require:
-      - file: /media/{{ env }}
 
 /media/{{ env }}/.dockerignore:
   file.managed:
     - source: salt://workspace/webserver/.dockerignore
-    - require:
-      - file: /media/{{ env }}
 
 {% for app, enabled in pillar.get('apps', {}).items() %}
 {%     if enabled == True %}
@@ -45,13 +41,12 @@ webserver:
     - force: True
     - dockerfile: dockerfile
     - require:
-      - file: /media/{{ env }}
       - file: /media/{{ env }}/sites
       - file: /media/{{ env }}/webserver
       - file: /media/{{ env }}/dockerfile
       - file: /media/{{ env }}/.dockerignore
- 
-build_package:
+
+run_apache2:
   docker_container.running:
     - image: webserver:mserrano
     - skip_translate: True
@@ -60,3 +55,10 @@ build_package:
     - replace: True
     - require:
       - docker_image: webserver
+
+mserrano/webserver/setup_apache2_via_docker/complete:
+  event.send:
+    - status: minion running
+    - comment: apache2 is running successfully
+    - require:
+      - docker_container: run_apache2

@@ -7,7 +7,12 @@ file_roots:
 log_level_logfile: debug
 reactor:
   - 'salt/minion/*/start':
-    - /srv/reactor/log__new_minion.sls
-  - 'mserrano/webserver/install_dependencies/complete':
+    - /srv/reactor/sync__grains.sls
+  - 'mserrano/webserver/install_docker_server/begin':
+    - /srv/reactor/log__mserrano.sls
+  - 'mserrano/webserver/install_docker_server/complete':
     - /srv/reactor/run__docker.sls
+    - /srv/reactor/log__mserrano.sls
+  - 'mserrano/webserver/setup_apache2_via_docker/complete':
+    - /srv/reactor/log__mserrano.sls
 timeout: 15

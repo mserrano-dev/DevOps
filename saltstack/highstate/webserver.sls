@@ -1,4 +1,9 @@
-{% set env = salt.pillar.get('environment') %}
+mserrano/webserver/install_docker_server/begin:
+  event.send:
+    - status: minion started
+    - comment: installing docker dependencies [docker.io, python-pip]
+    - require_in:
+      - pkg: build_dependencies
 
 build_dependencies:
   pkg.installed:
@@ -12,8 +17,10 @@ docker:
     - require:
       - pkg: build_dependencies
 
-mserrano/webserver/install_dependencies/complete:
+mserrano/webserver/install_docker_server/complete:
   event.send:
     - docker__obj: apache2
+    - status: minion setup
+    - comment: minion has been setup as docker server (docker daemon is running)
     - require:
       - pip: docker
