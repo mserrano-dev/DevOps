@@ -1,6 +1,10 @@
 auto_accept: True
 file_roots:
-  base:
-    - /srv/salt
-    - /srv/projects
+   base:
+     - /srv/salt
+     - /srv/projects
+log_level_logfile: debug
+reactor:
+  - 'salt/minion/*/start':
+    - /srv/reactor/log__new_minion.sls
 timeout: 15

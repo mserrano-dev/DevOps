@@ -12,6 +12,7 @@ class Infrastructure(object):
     # =-=-=--=---=-----=--------=-------------=
     # Settings
     # ----------------------------------------=
+    __count_webserver = 0
     __list_cmd = {
         "sleep": [
             "sleep 2",
@@ -36,6 +37,7 @@ class Infrastructure(object):
             # SaltStack
             "sudo ln -s /media/DevOps/saltstack/highstate /srv/salt",
             "sudo ln -s /media/DevOps/saltstack/pillar /srv/pillar",
+            "sudo ln -s /media/DevOps/saltstack/reactor /srv/reactor",
             # Docker
             "sudo ln -s /media/DevOps/docker/dockerfile /srv/projects/workspace/webserver/dockerfile",
             "sudo ln -s /media/DevOps/docker/.dockerignore /srv/projects/workspace/webserver/.dockerignore",
@@ -55,19 +57,26 @@ class Infrastructure(object):
         ],
     }
     
-    def do_minion_config(self):
+    def do_minion_config_base(self, minion_id, settings_file):
         config = SingleLineFile()
         config.add_line("master:")
         for ip_saltmaster in self.list_saltmaster: # add each saltmaster's IP
             config.add_line("  - " + ip_saltmaster)
-        config.append_yaml_file(project_fs.read_file('saltstack/settings/minion.yml')) # append the minion.yml file
-
+        config.add_line("id: %s" % minion_id)
+        config.append_yaml_file(project_fs.read_file(settings_file)) # append the .yml file
+        
         _return = []
         _return.append("sudo bash -c \"printf '%s' >> /etc/salt/minion\"" % config.get_file())
         _return.append("sudo service salt-minion restart")
         _return.append("sudo service salt-minion status") 
-        
-        return _return
+    
+    def do_master_as_minion_config(self):
+        self.do_minion_config_base(self, 'master', 'saltstack/settings/master_as_minion.yml')
+    
+    def do_minion_config(self):
+        self.__count_webserver += 1
+        webserver_id = "web%s" % self.__count_webserver
+        self.do_minion_config_base(self, webserver_id, 'saltstack/settings/minion.yml')
     
     # =-=-=--=---=-----=--------=-------------=
     # Functions

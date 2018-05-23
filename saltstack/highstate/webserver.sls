@@ -13,8 +13,8 @@ docker:
       - pkg: build_dependencies
 
 /media/{{ env }}: file.directory
-
 /media/{{ env }}/sites: file.directory
+/media/{{ env }}/webserver: file.directory
 
 /media/{{ env }}/dockerfile:
   file.managed:
@@ -29,17 +29,25 @@ docker:
       - file: /media/{{ env }}
 
 {% for app, enabled in pillar.get('apps', {}).items() %}
-{% if enabled == True %}
+{%     if enabled == True %}
+
 /media/{{ env }}/sites/{{ app }}.conf:
   file.managed:
     - source: salt://workspace/sites/{{ app }}.conf
     - require:
       - file: /media/{{ env }}/sites
+    - require_in:
+      - docker_image: webserver
 
 /media/{{ env }}/webserver/{{ app }}:
   file.recurse:
     - source: salt://workspace/webserver/{{ app }}
-{% endif %}
+    - require:
+      - file: /media/{{ env }}/webserver
+    - require_in:
+      - docker_image: webserver
+
+{%     endif %}
 {% endfor %}
 
 webserver:
@@ -49,8 +57,13 @@ webserver:
     - force: True
     - dockerfile: dockerfile
     - require:
-      - pip: docker
       - pkg: build_dependencies
+      - pip: docker
+      - file: /media/{{ env }}
+      - file: /media/{{ env }}/sites
+      - file: /media/{{ env }}/webserver
+      - file: /media/{{ env }}/dockerfile
+      - file: /media/{{ env }}/.dockerignore
  
 build_package:
   docker_container.running:
