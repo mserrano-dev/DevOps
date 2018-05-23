@@ -8,4 +8,6 @@ log_level_logfile: debug
 reactor:
   - 'salt/minion/*/start':
     - /srv/reactor/log__new_minion.sls
+  - 'mserrano/webserver/install_dependencies/complete':
+    - /srv/reactor/run__docker.sls
 timeout: 15
