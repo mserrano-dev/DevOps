@@ -1,0 +1,4 @@
+startup_states: highstate
+grains:
+  roles:
+    - master

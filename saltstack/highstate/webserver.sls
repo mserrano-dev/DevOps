@@ -1,3 +1,8 @@
+# =-=-=--=---=-----=--------=-------------=
+# Install docker.io and docker-py
+#   then notify to run_docker_apache2
+# ----------------------------------------=
+
 mserrano/webserver/install_docker_server/begin:
   event.send:
     - status: minion started

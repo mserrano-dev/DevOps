@@ -1,3 +1,8 @@
+# =-=-=--=---=-----=--------=-------------=
+# Setup a running docker container
+#   apache2 via port 80
+# ----------------------------------------=
+
 {% set env = salt.pillar.get('environment') %}
 
 /media/{{ env }}: file.directory
@@ -59,6 +64,6 @@ run_apache2:
 mserrano/webserver/setup_apache2_via_docker/complete:
   event.send:
     - status: minion running
-    - comment: apache2 is running successfully
+    - comment: apache2 is running and ready to serve traffic
     - require:
       - docker_container: run_apache2

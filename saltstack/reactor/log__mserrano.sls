@@ -1,11 +1,15 @@
-{% set args = data['data'] %}
+# =-=-=--=---=-----=--------=-------------=
+# Event-driven logging to /tmp directory
+# ----------------------------------------=
 {% set log_file = '/tmp/mserrano.log' %}
+
+{% set args = data['data'] %}
 {% set minion_id =  data['id'] %}
 {% set timestamp = '' %}
 
 log__banner:
   local.cmd.run:
-    - comment: present standard info 
+    - comment: present standard info
     - tgt: 'master*'
     - arg:
       - 'printf "[{{ minion_id }}] [{{ args['status'] }}] - ({{ tag }})\n" >> {{ log_file }}'

@@ -1,3 +1,7 @@
+# =-=-=--=---=-----=--------=-------------=
+# Apply docker-related salt state file
+# ----------------------------------------=
+
 {% set args = data['data'] %}
 
 run__docker:
