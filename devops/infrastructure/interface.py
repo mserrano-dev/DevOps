@@ -23,7 +23,7 @@ class Infrastructure(object):
             "sudo apt-get update -y",
         ],
         "install_as_master": [
-            "sudo apt-get install -y salt-api salt-syndic salt-master",
+            "sudo apt-get install -y salt-api salt-syndic salt-minion salt-master",
         ],
         "install_as_minion": [
             "sudo apt-get install -y salt-api salt-syndic salt-minion",
@@ -62,21 +62,24 @@ class Infrastructure(object):
         config.add_line("master:")
         for ip_saltmaster in self.list_saltmaster: # add each saltmaster's IP
             config.add_line("  - " + ip_saltmaster)
-        config.add_line("id: %s" % minion_id)
+        if minion_id != None: # add minion id, if non-None
+            config.add_line("id: %s" % minion_id)
         config.append_yaml_file(project_fs.read_file(settings_file)) # append the .yml file
         
         _return = []
         _return.append("sudo bash -c \"printf '%s' >> /etc/salt/minion\"" % config.get_file())
         _return.append("sudo service salt-minion restart")
-        _return.append("sudo service salt-minion status") 
+        _return.append("sudo service salt-minion status")
+        
+        return _return
     
     def do_master_as_minion_config(self):
-        self.do_minion_config_base(self, 'master', 'saltstack/settings/master_as_minion.yml')
+        return self.do_minion_config_base('master', 'saltstack/settings/master_as_minion.yml')
     
     def do_minion_config(self):
         self.__count_webserver += 1
-        webserver_id = "web%s" % self.__count_webserver
-        self.do_minion_config_base(self, webserver_id, 'saltstack/settings/minion.yml')
+        webserver_id = "web%s" % self.__count_webserver; webserver_id = None
+        return self.do_minion_config_base(webserver_id, 'saltstack/settings/minion.yml')
     
     # =-=-=--=---=-----=--------=-------------=
     # Functions
@@ -86,6 +89,7 @@ class Infrastructure(object):
             'saltstack_master': ['update_saltstack', 'install_as_master'],
             'saltstack_minion': ['update_saltstack', 'install_as_minion'],
             'configure_minion': ['sleep', '__do_minion_config()'],
+            'configure_master_as_minion': ['_do_master_as_minion_config()'],
             'setup_webserver': ['setup_master_filesystem', 'accept_minions'],
         }
     

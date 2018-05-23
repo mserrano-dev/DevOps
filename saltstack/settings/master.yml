@@ -3,6 +3,7 @@ file_roots:
    base:
      - /srv/salt
      - /srv/projects
+     - /srv/reactor
 log_level_logfile: debug
 reactor:
   - 'salt/minion/*/start':

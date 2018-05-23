@@ -38,6 +38,7 @@ def main():
 
     install_saltstack(cloud, infrastructure)
     configure_minions(cloud, infrastructure)
+    configure_master_as_minion(cloud, infrastructure)
     install_webservers(cloud, infrastructure)
 
     stopwatch.output_report()
@@ -70,6 +71,9 @@ def install_saltstack(cloud, infrastructure):
     
 def configure_minions(cloud, infrastructure):
     run_on_each(cloud, infrastructure['webserver'], 'configure_minion', 'Minions Configured')
+    
+def configure_master_as_minion(cloud, infrastructure):
+    run_on_each(cloud, infrastructure['saltmaster'], 'configure_master_as_minion', 'Master Configured as Minion')
     
 def install_webservers(cloud, infrastructure):
     run_on_each(cloud, infrastructure['saltmaster'], 'setup_webserver', 'Webservers Setup')
