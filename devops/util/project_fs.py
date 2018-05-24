@@ -16,8 +16,16 @@ def read_file(filename):
     with open(__path(filename), 'r') as fhandle:
         return fhandle.read()
 
+def read_file_safe(filename, fallback):
+    try:
+        _return = read_file(filename)
+    except IOError:
+        _return = fallback
+    
+    return _return
+
 def read_json(filename):
-    return json.loads(read_file(filename))
+    return json.loads(read_file_safe(filename, ''))
 
 # =-=-=--=---=-----=--------=-------------=
 # Helpers
