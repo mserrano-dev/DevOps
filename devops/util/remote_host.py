@@ -1,6 +1,7 @@
 #!/usr/bin/python
 import os
 import subprocess
+from util import project_fs
 
 # ============================================================================ #
 # Remote Host related helpers
@@ -38,6 +39,6 @@ def rsync(HOST, IDENTITY, SOURCE, DESTINATION):
         "rsync",
         "-e", 'ssh -i %s/.ssh/%s' % (os.path.expanduser("~"), IDENTITY),
         "ubuntu@%s:%s" % (HOST, SOURCE),
-        DESTINATION
+        '%s/%s' % (project_fs.get_root(), DESTINATION),
     ]
     return subprocess.Popen(args).wait()

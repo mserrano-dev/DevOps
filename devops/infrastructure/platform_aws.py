@@ -36,7 +36,7 @@ class Platform(Infrastructure):
             list_instance.append(obj['InstanceId'])
         
         # wait for all instances to spin up
-        custom_waiter = Polling(5, 'Spinning up new servers...', '...DONE')
+        custom_waiter = Polling(5, 'Spinning up new servers...', '...DONE (%s New Servers Running)' % COUNT)
         custom_waiter.register_polling_fn(self.ec2.describe_instance_status)
         custom_waiter.register_resp_parser_fn(self.__resp_parser, {})
         custom_waiter.register_resp_status_fn(self.__resp_status, {})

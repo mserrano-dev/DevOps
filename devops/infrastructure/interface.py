@@ -12,7 +12,9 @@ class Infrastructure(object):
     # =-=-=--=---=-----=--------=-------------=
     # Settings
     # ----------------------------------------=
-    __count_webserver = 0
+    log_location_on_remote = '/tmp/mserrano.log' #absolute
+    log_location_on_local = '/tmp/mserrano.log' #relative to project root
+    count_webserver = 0 #do not modify. this class proeprty available
     __list_cmd = {
         "sleep": [
             "sleep 2",
@@ -35,6 +37,7 @@ class Infrastructure(object):
             "sudo ln -s /media/DevOps/bin /srv/projects/workspace/bin",
             "sudo ln -s /media/DevOps/devops /srv/projects/workspace/devops",
             # SaltStack
+            "touch %s" % log_location_on_remote,
             "sudo ln -s /media/DevOps/saltstack/highstate /srv/salt",
             "sudo ln -s /media/DevOps/saltstack/grains /srv/salt/_grains",
             "sudo ln -s /media/DevOps/saltstack/pillar /srv/pillar",
@@ -78,8 +81,8 @@ class Infrastructure(object):
         return self.do_minion_config_base('master', 'saltstack/settings/master_as_minion.yml')
     
     def do_minion_config(self):
-        self.__count_webserver += 1
-        webserver_id = "web%s" % self.__count_webserver; webserver_id = None
+        self.count_webserver += 1
+        webserver_id = "web%s" % self.count_webserver; webserver_id = None
         return self.do_minion_config_base(webserver_id, 'saltstack/settings/minion.yml')
     
     # =-=-=--=---=-----=--------=-------------=
@@ -91,7 +94,7 @@ class Infrastructure(object):
             'saltstack_minion': ['update_saltstack', 'install_as_minion'],
             'configure_minion': ['sleep', '__do_minion_config()'],
             'configure_master_as_minion': ['_do_master_as_minion_config()'],
-            'setup_webserver': ['setup_master_filesystem', 'accept_minions'],
+            'configure_master': ['setup_master_filesystem', 'accept_minions'],
         }
     
     @abstractmethod
