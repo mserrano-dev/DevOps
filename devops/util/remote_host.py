@@ -3,7 +3,7 @@ import os
 import subprocess
 
 # ============================================================================ #
-# SSH related helpers
+# Remote Host related helpers
 # ============================================================================ #
 def add_fingerprint(LIST_HOST):
     """
@@ -18,7 +18,7 @@ def add_fingerprint(LIST_HOST):
     process.wait()
     return process.stdout.read()
     
-def call(HOST, LIST_CMD, IDENTITY):
+def ssh(HOST, IDENTITY, LIST_CMD):
     """
     Execute commands on remote host
       NOTE: assumes identity file in directory ~/.ssh

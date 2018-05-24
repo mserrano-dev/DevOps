@@ -1,5 +1,5 @@
 #!/usr/bin/python
-import ssh
+import remote_host
 from threading import Thread
 
 # ============================================================================ #
@@ -23,8 +23,8 @@ class Runner():
         Enqueue an ssh call to each instance
         """
         for obj in list_instance:
-            target_args = (obj['IP'], cloud.recipe(recipe), cloud.id_file, )
-            self.add_task(name=obj['KEY'], target=ssh.call, args=target_args)
+            target_args = (obj['IP'], cloud.id_file, cloud.recipe(recipe), )
+            self.add_task(name=obj['KEY'], target=remote_host.ssh, args=target_args)
     
     def invoke_all_and_wait(self):
         """

@@ -7,7 +7,7 @@ from termcolor import colored
 from util import date
 from util import multi_thread
 from util import project_fs
-from util import ssh
+from util import remote_host
 from util import timer
 from util.array_phpfill import *
 from util.polling import Polling
@@ -57,7 +57,7 @@ def assign_roles(list_instance):
 
 def authenticate_all_host(list_host):
     authentication = Polling(2, 'Adding fingerprints to ~/ssh/known_hosts...', '...DONE')
-    authentication.register_polling_fn(ssh.add_fingerprint)
+    authentication.register_polling_fn(remote_host.add_fingerprint)
     authentication.register_resp_parser_fn(confirm_success, {'list_host': list_host})
     authentication.register_resp_status_fn(report_progress, {'list_host': list_host})
     authentication.wait({'LIST_HOST':list_host})
