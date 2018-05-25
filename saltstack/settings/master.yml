@@ -8,11 +8,17 @@ log_level_logfile: debug
 reactor:
   - 'salt/minion/*/start':
     - /srv/reactor/sync__grains.sls
+  # webservers
   - 'mserrano/webserver/install_docker_server/begin':
     - /srv/reactor/log__mserrano.sls
   - 'mserrano/webserver/install_docker_server/complete':
     - /srv/reactor/run__docker.sls
     - /srv/reactor/log__mserrano.sls
   - 'mserrano/webserver/setup_apache2_via_docker/complete':
+    - /srv/reactor/log__mserrano.sls
+  # haproxy
+  - 'mserrano/haproxy/setup/begin':
+    - /srv/reactor/log__mserrano.sls
+  - 'mserrano/haproxy/setup/complete':
     - /srv/reactor/log__mserrano.sls
 timeout: 15

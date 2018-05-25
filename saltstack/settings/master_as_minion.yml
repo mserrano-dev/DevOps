@@ -2,3 +2,4 @@ startup_states: highstate
 grains:
   roles:
     - master
+    - load_balancer
