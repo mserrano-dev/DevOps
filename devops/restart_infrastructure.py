@@ -21,9 +21,9 @@ from util.polling import Polling
 def main():
     stopwatch = timer.Stopwatch()
     
-    mserrano_config = project_fs.read_json('.aws/mserrano.config', rel_to_user_home=True)
-    cloud = provider.Platform(mserrano_config)
-    infrastructure = assign_roles(cloud.create_server(mserrano_config['ServerCount']))
+    settings = project_fs.read_json('.aws/mserrano.config', rel_to_user_home=True)
+    cloud = provider.Platform(settings)
+    infrastructure = assign_roles(cloud.create_server(settings['ServerCount']))
     project_fs.upsert_file('infrastructure.json', json.dumps(infrastructure, indent=4))
     cloud.list_saltmaster = array_column(infrastructure['saltmaster'], 'IP')
     cloud.id_file = "mserrano-stage.pem"
@@ -54,11 +54,9 @@ def assign_roles(list_instance):
     return _return
 
 def authenticate_all_host(list_host):
-    authentication = Polling(2, 'Adding fingerprints to ~/ssh/known_hosts...', '...DONE (All Remote Host Authenticated)')
-    authentication.register_polling_fn(remote_host.add_fingerprint)
-    authentication.register_resp_parser_fn(auth_confirm_success, {'list_host': list_host})
-    authentication.register_resp_status_fn(auth_report_progress, {'list_host': list_host})
-    authentication.wait({'LIST_HOST':list_host})
+    poll_authentication(title_msg='Adding fingerprints to ~/ssh/known_hosts...', 
+                        list_host=list_host,
+                        done_msg='...DONE (All Remote Host Authenticated)')
 
 def install_saltstack(cloud, infrastructure):
     runner = multi_thread.Runner()
@@ -68,43 +66,37 @@ def install_saltstack(cloud, infrastructure):
     output_done_msg('Saltstack Installed')
 
 def configure_webserver_minion(cloud, infrastructure):
-    run_on_each(cloud, infrastructure['webserver'], 'configure_minion', 'Minions Configured')
+    run_on_each(cloud, infrastructure['webserver'], 
+                recipe='configure_minion', 
+                status_msg='Minions Configured')
 
 def configure_master_as_minion(cloud, infrastructure):
-    run_on_each(cloud, infrastructure['saltmaster'], 'configure_master_as_minion', 'Master Configured as Minion')
+    run_on_each(cloud, infrastructure['saltmaster'], 
+                recipe='configure_master_as_minion', 
+                status_msg='Master Configured as Minion')
 
 def configure_minion(cloud, infrastructure):
     configure_webserver_minion(cloud, infrastructure)
     configure_master_as_minion(cloud, infrastructure)
 
 def configure_master(cloud, infrastructure):
-    run_on_each(cloud, infrastructure['saltmaster'], 'configure_master', 'Applied Highstate to each Minion')
+    run_on_each(cloud, infrastructure['saltmaster'], 
+                recipe='configure_master', 
+                status_msg='Applied Highstate to each Minion')
 
 def install_docker(cloud, infrastructure):
-    status_docker = Polling(10, 'Setting up Docker...', '...DONE (All Docker daemon now running)')
-    status_docker.register_polling_fn(remote_host.rsync)
-    status_docker.register_resp_parser_fn(docker_confirm_success, {'cloud': cloud})
-    status_docker.register_resp_status_fn(docker_report_progress, {'cloud': cloud})
-    args = {
-        'HOST': cloud.list_saltmaster[0],
-        'IDENTITY': cloud.id_file,
-        'SOURCE': cloud.log_location_on_remote,
-        'DESTINATION': cloud.log_location_on_local,
-    }
-    status_docker.wait(args)
+    poll_highstate_status(cloud, infrastructure,
+                          search_key='minion setup', 
+                          title_msg='Setting up Docker...', 
+                          status_msg='are now ready', 
+                          done_msg='...DONE (All Docker daemon now running)')
 
 def run_webservers(cloud, infrastructure):
-    status_web = Polling(5, 'Creating docker images...', '...DONE (All Apache2 server now running and ready to serve traffic)')
-    status_web.register_polling_fn(remote_host.rsync)
-    status_web.register_resp_parser_fn(web_confirm_success, {'cloud': cloud})
-    status_web.register_resp_status_fn(web_report_progress, {'cloud': cloud})
-    args = {
-        'HOST': cloud.list_saltmaster[0],
-        'IDENTITY': cloud.id_file,
-        'SOURCE': cloud.log_location_on_remote,
-        'DESTINATION': cloud.log_location_on_local,
-    }
-    status_web.wait(args)
+    poll_highstate_status(cloud, infrastructure,
+                          search_key='minion running', 
+                          title_msg='Creating docker images...', 
+                          status_msg='are running containers successfully', 
+                          done_msg='...DONE (All Apache2 server now running and ready to serve traffic)')
 
 def point_to_route53(cloud, infrastructure):
     web1 = infrastructure['webserver'][0]['IP'] #TODO: HAProxy
@@ -115,77 +107,67 @@ def point_to_route53(cloud, infrastructure):
 # =-=-=--=---=-----=--------=-------------=
 # Helpers
 # ----------------------------------------=
-def run_on_each(cloud, list_instance, recipe, msg):
-    runner = multi_thread.Runner()
-    runner.add_recipe_on_each(cloud, list_instance, recipe)
-    runner.invoke_all_and_wait()
-    output_done_msg(msg)
-
 def output_done_msg(msg):
-    print colored('  >', 'cyan', attrs=['blink']) + colored(' ...DONE', 'cyan') + ' (%s)' % msg, '\r',
+    print colored('  >', 'cyan', attrs=['blink']) + colored(' ...DONE (%s)' % msg, 'cyan') + '\r',
     sys.stdout.flush()
     timer.sleep(1)
     print colored('  > ...DONE (%s)' % msg, 'cyan')
 
-def auth_confirm_success(resp, list_host):
-    _return = True
-    if resp.count('\n') == (len(list_host) * 3):
-        out_file = open("%s/.ssh/known_hosts" % os.path.expanduser("~"), "a")
-        out_file.write(resp)
-    else:
-        _return = False
-    return _return
+def run_on_each(cloud, list_instance, ** kwargs):
+    runner = multi_thread.Runner()
+    runner.add_recipe_on_each(cloud, list_instance, kwargs['recipe'])
+    runner.invoke_all_and_wait()
+    output_done_msg(kwargs['status_msg'])
 
-def auth_report_progress(resp, list_host):
-    result = resp.count('\n') / 3
-    if result == len(list_host):
-        _return = 'Success! %d/%d keys collected. Permanently adding to known_hosts..' % (result, len(list_host))
-    else:
-        _return = 'Failed.. %d/%d keys collected. Trying again' % (result, len(list_host))
-    return _return
-
-def count_occurances(file, search_key):
-    haystack = project_fs.read_file_safe(file, '')
-    needle = '(%s)' % search_key
-    result = re.findall(needle, haystack)
+def poll_authentication( ** kwargs):
+    def auth_confirm_success(resp, list_host):
+        _return = True
+        if resp.count('\n') == (len(list_host) * 3):
+            out_file = open("%s/.ssh/known_hosts" % os.path.expanduser("~"), "a")
+            out_file.write(resp)
+        else:
+            _return = False
+        return _return
     
-    return len(result)
-
-def presence_in_file(file, search_key, expected_count):
-    num_found = count_occurances(file, search_key)
+    def auth_report_progress(resp, list_host):
+        result = resp.count('\n') / 3
+        if result == len(list_host):
+            _return = 'Success! %d/%d keys collected. Permanently adding to known_hosts..' % (result, len(list_host))
+        else:
+            _return = 'Failed.. %d/%d keys collected. Trying again' % (result, len(list_host))
+        return _return
     
-    return (num_found == expected_count)
+    status_auth = Polling(2, kwargs['title_msg'], kwargs['done_msg'])
+    status_auth.register_polling_fn(remote_host.add_fingerprint)
+    status_auth.register_resp_parser_fn(auth_confirm_success, {'list_host':kwargs['list_host']})
+    status_auth.register_resp_status_fn(auth_report_progress, {'list_host':kwargs['list_host']})
+    status_auth.wait({'LIST_HOST':kwargs['list_host']})
 
-def docker_confirm_success(resp, cloud):
+def poll_highstate_status(cloud, infrastructure, ** kwargs):
+    def __count_occurances(file, search_key):
+        haystack = project_fs.read_file_safe(file, '')
+        needle = '(%s)' % search_key
+        matches = re.findall(needle, haystack)
+        return len(matches)
+    
+    def highstate_confirm_success(resp, cloud, search_key):
+        num_found = __count_occurances(cloud.log_location_on_local, search_key)
+        return (num_found == cloud.count_webserver)
+    
+    def highstate_report_progress(resp, cloud, search_key):
+        num_found = __count_occurances(cloud.log_location_on_local, search_key)
+        return '%s/%s %s' % (num_found, cloud.count_webserver, kwargs['status_msg'])
+    
+    status_highstate = Polling(5, kwargs['title_msg'], kwargs['done_msg'])
+    status_highstate.register_polling_fn(remote_host.rsync)
+    status_highstate.register_resp_parser_fn(highstate_confirm_success, {'cloud': cloud, 'search_key': kwargs['search_key']})
+    status_highstate.register_resp_status_fn(highstate_report_progress, {'cloud': cloud, 'search_key': kwargs['search_key']})
     args = {
-        'file': cloud.log_location_on_local,
-        'search_key': 'minion setup',
-        'expected_count': cloud.count_webserver
+        'HOST': cloud.list_saltmaster[0],
+        'IDENTITY': cloud.id_file,
+        'SOURCE': cloud.log_location_on_remote,
+        'DESTINATION': cloud.log_location_on_local,
     }
-    return presence_in_file( ** args)
-
-def docker_report_progress(resp, cloud):
-    args = {
-        'file': cloud.log_location_on_local,
-        'search_key': 'minion setup',
-    }
-    msg = 'are now ready'
-    return '%s/%s %s' % (count_occurances( ** args), cloud.count_webserver, msg)
-
-def web_confirm_success(resp, cloud):
-    args = {
-        'file': cloud.log_location_on_local,
-        'search_key': 'minion running',
-        'expected_count': cloud.count_webserver
-    }
-    return presence_in_file( ** args)
-
-def web_report_progress(resp, cloud):
-    args = {
-        'file': cloud.log_location_on_local,
-        'search_key': 'minion running',
-    }
-    msg = 'are running containers successfully'
-    return '%s/%s %s' % (count_occurances( ** args), cloud.count_webserver, msg)
+    status_highstate.wait(args)
 
 main() # start script
