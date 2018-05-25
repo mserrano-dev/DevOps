@@ -47,23 +47,25 @@ class Route53():
         """
         Stop execution until Route53 propagates all changes
         """
-        status_job = Polling(10, 'propagating changes to all Amazon Route53 authoritative DNS servers...', '...DONE (mserrano.net now pointing to %s' % ip_addr)
-        status_job.register_polling_fn(self.route53.get_change)
-        status_job.register_resp_parser_fn(self.__resp_parser, {})
-        status_job.register_resp_status_fn(self.__resp_status, {})
+        def resp_parser(resp):
+            status = resp['ChangeInfo']['Status']
+            return (status == 'INSYNC')
+        
+        def resp_status(resp):
+            status = resp['ChangeInfo']['Status']
+            msg = {
+                'PENDING': 'status pending, please wait...',
+                'INSYNC': 'all DNS servers are in-sync',
+            }
+            return msg[status]
+        
+        status_job = Polling(polling_interval=10,
+                             polling_function=self.route53.get_change,
+                             start_msg='propagating changes to all Amazon Route53 authoritative DNS servers...', 
+                             end_msg='mserrano.net now pointing to %s' % ip_addr)
+        status_job.register_resp_parser_fn(resp_parser, {})
+        status_job.register_resp_status_fn(resp_status, {})
         args = {
             'Id': job_id,
         }
         status_job.wait(args)
-    
-    def __resp_parser(self, resp):
-        status = resp['ChangeInfo']['Status']
-        return (status == 'INSYNC')
-    
-    def __resp_status(self, resp):
-        status = resp['ChangeInfo']['Status']
-        msg = {
-            'PENDING': 'status pending, please wait...',
-            'INSYNC': 'all DNS servers are in-sync',
-        }
-        return msg[status]

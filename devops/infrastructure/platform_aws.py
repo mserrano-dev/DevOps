@@ -36,8 +36,10 @@ class Platform(Infrastructure):
             list_instance.append(obj['InstanceId'])
         
         # wait for all instances to spin up
-        custom_waiter = Polling(5, 'Spinning up new servers...', '...DONE (%s New Servers Running)' % COUNT)
-        custom_waiter.register_polling_fn(self.ec2.describe_instance_status)
+        custom_waiter = Polling(polling_interval=5,
+                                polling_function=self.ec2.describe_instance_status,
+                                start_msg='Spinning up new servers...',
+                                end_msg='%s New Servers Running' % COUNT)
         custom_waiter.register_resp_parser_fn(self.__resp_parser, {})
         custom_waiter.register_resp_status_fn(self.__resp_status, {})
         custom_waiter.wait({'InstanceIds': list_instance})
@@ -86,7 +88,7 @@ class Platform(Infrastructure):
                 result[status] += 1
             else:
                 result[status] = 1
-            
+        
         _return = False
         if (len(result)) == 1 and ('running' in result):
             if (result['running'] == len(resp['InstanceStatuses'])):

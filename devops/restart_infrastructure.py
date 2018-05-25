@@ -8,6 +8,7 @@ import sys
 from termcolor import colored
 from util import date
 from util import multi_thread
+from util import output
 from util import project_fs
 from util import remote_host
 from util import timer
@@ -56,14 +57,14 @@ def assign_roles(list_instance):
 def authenticate_all_host(list_host):
     poll_authentication(title_msg='Adding fingerprints to ~/ssh/known_hosts...', 
                         list_host=list_host,
-                        done_msg='...DONE (All Remote Host Authenticated)')
+                        done_msg='All Remote Host Authenticated')
 
 def install_saltstack(cloud, infrastructure):
     runner = multi_thread.Runner()
     runner.add_recipe_on_each(cloud, infrastructure['saltmaster'], 'saltstack_master')
     runner.add_recipe_on_each(cloud, infrastructure['webserver'], 'saltstack_minion')
     runner.invoke_all_and_wait()
-    output_done_msg('Saltstack Installed')
+    output.end_banner('Saltstack Installed')
 
 def configure_webserver_minion(cloud, infrastructure):
     run_on_each(cloud, infrastructure['webserver'], 
@@ -86,17 +87,19 @@ def configure_master(cloud, infrastructure):
 
 def install_docker(cloud, infrastructure):
     poll_highstate_status(cloud, infrastructure,
+                          polling_interval=15,
                           search_key='minion setup', 
                           title_msg='Setting up Docker...', 
                           status_msg='are now ready', 
-                          done_msg='...DONE (All Docker daemon now running)')
+                          done_msg='All Docker daemon now running')
 
 def run_webservers(cloud, infrastructure):
     poll_highstate_status(cloud, infrastructure,
+                          polling_interval=5,
                           search_key='minion running', 
                           title_msg='Creating docker images...', 
                           status_msg='are running containers successfully', 
-                          done_msg='...DONE (All Apache2 server now running and ready to serve traffic)')
+                          done_msg='All Apache2 server now running and ready to serve traffic')
 
 def point_to_route53(cloud, infrastructure):
     web1 = infrastructure['webserver'][0]['IP'] #TODO: HAProxy
@@ -107,17 +110,11 @@ def point_to_route53(cloud, infrastructure):
 # =-=-=--=---=-----=--------=-------------=
 # Helpers
 # ----------------------------------------=
-def output_done_msg(msg):
-    print colored('  >', 'cyan', attrs=['blink']) + colored(' ...DONE (%s)' % msg, 'cyan') + '\r',
-    sys.stdout.flush()
-    timer.sleep(1)
-    print colored('  > ...DONE (%s)' % msg, 'cyan')
-
 def run_on_each(cloud, list_instance, ** kwargs):
     runner = multi_thread.Runner()
     runner.add_recipe_on_each(cloud, list_instance, kwargs['recipe'])
     runner.invoke_all_and_wait()
-    output_done_msg(kwargs['status_msg'])
+    output.end_banner(kwargs['status_msg'])
 
 def poll_authentication( ** kwargs):
     def auth_confirm_success(resp, list_host):
@@ -137,8 +134,10 @@ def poll_authentication( ** kwargs):
             _return = 'Failed.. %d/%d keys collected. Trying again' % (result, len(list_host))
         return _return
     
-    status_auth = Polling(2, kwargs['title_msg'], kwargs['done_msg'])
-    status_auth.register_polling_fn(remote_host.add_fingerprint)
+    status_auth = Polling(polling_interval=2,
+                          polling_function=remote_host.add_fingerprint,
+                          start_msg=kwargs['title_msg'], 
+                          end_msg=kwargs['done_msg'])
     status_auth.register_resp_parser_fn(auth_confirm_success, {'list_host':kwargs['list_host']})
     status_auth.register_resp_status_fn(auth_report_progress, {'list_host':kwargs['list_host']})
     status_auth.wait({'LIST_HOST':kwargs['list_host']})
@@ -158,8 +157,10 @@ def poll_highstate_status(cloud, infrastructure, ** kwargs):
         num_found = __count_occurances(cloud.log_location_on_local, search_key)
         return '%s/%s %s' % (num_found, cloud.count_webserver, kwargs['status_msg'])
     
-    status_highstate = Polling(5, kwargs['title_msg'], kwargs['done_msg'])
-    status_highstate.register_polling_fn(remote_host.rsync)
+    status_highstate = Polling(polling_interval=kwargs['polling_interval'],
+                               polling_function=remote_host.rsync,
+                               start_msg=kwargs['title_msg'],
+                               end_msg=kwargs['done_msg'])
     status_highstate.register_resp_parser_fn(highstate_confirm_success, {'cloud': cloud, 'search_key': kwargs['search_key']})
     status_highstate.register_resp_status_fn(highstate_report_progress, {'cloud': cloud, 'search_key': kwargs['search_key']})
     args = {
