@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from infrastructure import dns_server
 from infrastructure import platform_aws as provider
 import json
 import os
@@ -18,17 +19,11 @@ from util.polling import Polling
 # Garbage collect remaining servers if all tests passing.
 # ============================================================================ #
 def main():
-    settings = {
-        # infrastructure settings
-        'Count': 3,
-        # aws specific settings
-        'Template': 'ubuntu_18.04',
-        'Version': '1',
-    }
     stopwatch = timer.Stopwatch()
     
-    cloud = provider.Platform(settings)
-    infrastructure = assign_roles(cloud.create_server(settings['Count']))
+    mserrano_config = project_fs.read_json('.aws/mserrano.config', rel_to_user_home=True)
+    cloud = provider.Platform(mserrano_config)
+    infrastructure = assign_roles(cloud.create_server(mserrano_config['ServerCount']))
     project_fs.upsert_file('infrastructure.json', json.dumps(infrastructure, indent=4))
     cloud.list_saltmaster = array_column(infrastructure['saltmaster'], 'IP')
     cloud.id_file = "mserrano-stage.pem"
@@ -42,6 +37,7 @@ def main():
     configure_master(cloud, infrastructure)
     install_docker(cloud, infrastructure)
     run_webservers(cloud, infrastructure)
+    point_to_route53(cloud, infrastructure)
     
     stopwatch.output_report()
 
@@ -82,7 +78,7 @@ def configure_minion(cloud, infrastructure):
     configure_master_as_minion(cloud, infrastructure)
 
 def configure_master(cloud, infrastructure):
-    run_on_each(cloud, infrastructure['saltmaster'], 'configure_master', 'Applying Highstate to each Minion')
+    run_on_each(cloud, infrastructure['saltmaster'], 'configure_master', 'Applied Highstate to each Minion')
 
 def install_docker(cloud, infrastructure):
     status_docker = Polling(10, 'Setting up Docker...', '...DONE (All Docker daemon now running)')
@@ -109,6 +105,12 @@ def run_webservers(cloud, infrastructure):
         'DESTINATION': cloud.log_location_on_local,
     }
     status_web.wait(args)
+
+def point_to_route53(cloud, infrastructure):
+    web1 = infrastructure['webserver'][0]['IP'] #TODO: HAProxy
+    
+    route53 = dns_server.Route53(cloud.settings)
+    route53.modify_record_set('*.mserrano.net', web1)
 
 # =-=-=--=---=-----=--------=-------------=
 # Helpers
@@ -160,7 +162,7 @@ def docker_confirm_success(resp, cloud):
         'search_key': 'minion setup',
         'expected_count': cloud.count_webserver
     }
-    return presence_in_file(** args)
+    return presence_in_file( ** args)
 
 def docker_report_progress(resp, cloud):
     args = {
@@ -168,7 +170,7 @@ def docker_report_progress(resp, cloud):
         'search_key': 'minion setup',
     }
     msg = 'are now ready'
-    return '%s/%s %s' % (count_occurances(** args), cloud.count_webserver, msg)
+    return '%s/%s %s' % (count_occurances( ** args), cloud.count_webserver, msg)
 
 def web_confirm_success(resp, cloud):
     args = {
@@ -176,7 +178,7 @@ def web_confirm_success(resp, cloud):
         'search_key': 'minion running',
         'expected_count': cloud.count_webserver
     }
-    return presence_in_file(** args)
+    return presence_in_file( ** args)
 
 def web_report_progress(resp, cloud):
     args = {
@@ -184,6 +186,6 @@ def web_report_progress(resp, cloud):
         'search_key': 'minion running',
     }
     msg = 'are running containers successfully'
-    return '%s/%s %s' % (count_occurances(** args), cloud.count_webserver, msg)
+    return '%s/%s %s' % (count_occurances( ** args), cloud.count_webserver, msg)
 
 main() # start script

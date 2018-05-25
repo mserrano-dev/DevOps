@@ -30,7 +30,7 @@ class Platform(Infrastructure):
             'MaxCount': COUNT,
             'MinCount': COUNT
         }
-        resp = self.ec2.run_instances(** args)
+        resp = self.ec2.run_instances( ** args)
         list_instance = []
         for obj in resp['Instances']:
             list_instance.append(obj['InstanceId'])
@@ -54,7 +54,7 @@ class Platform(Infrastructure):
         if _continue == True:
             for instance in resp['Reservations'][0]['Instances']:
                 _return.append(self.collect_info(instance))
-            
+        
         return _return
     
     def collect_info(self, OBJ):
@@ -71,10 +71,10 @@ class Platform(Infrastructure):
         list_key = [KEY]
         if isinstance(KEY, list) == True:
             list_key = KEY
-            
+        
         resp = self.ec2.terminate_instances(InstanceIds=list_key)
         print json.dumps(resp, indent=4, sort_keys=True, default=str)
-
+    
     # =-=-=--=---=-----=--------=-------------=
     # Helpers
     # ----------------------------------------=
@@ -95,16 +95,4 @@ class Platform(Infrastructure):
         return _return
     
     def __resp_status(self, resp):
-        result = {}
-        for obj in resp['InstanceStatuses']:
-            status = obj['InstanceState']['Name']
-            if status in result:
-                result[status] += 1
-            else:
-                result[status] = 1
-        
-        _return = ''
-        if len(result) != 0:
-            _return = '%s servers %s' % (result.values()[0], result.keys()[0])
-            
-        return _return
+        return 'contacting Amazon Web Services...'
