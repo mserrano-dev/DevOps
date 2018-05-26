@@ -12,14 +12,15 @@ class SingleLineFile():
         Enqueue a string
         """
         self.__list_line.append(line)
-        
-    def append_yaml_file(self, file):
+    
+    def append_file(self, file):
         """
-        Enqueue each line in a yaml file
+        Enqueue each line in a file
         """
         for line in file.split("\n"):
-            self.add_line(line)
-            
+            escaped_line = line.replace('%', '%%')
+            self.add_line(escaped_line)
+    
     def get_file(self):
         """
         Return the composed file as a single line

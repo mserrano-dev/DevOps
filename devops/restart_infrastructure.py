@@ -26,8 +26,10 @@ def main():
     cloud = provider.Platform(settings)
     infrastructure = assign_roles(cloud.create_server(settings['ServerCount']))
     project_fs.upsert_file('infrastructure.json', json.dumps(infrastructure, indent=4))
+    cloud.ip_haproxy = array_column(infrastructure['loadbalancer'], 'IP')[0]
     cloud.list_saltmaster = array_column(infrastructure['saltmaster'], 'IP')
-    cloud.id_file = "mserrano-stage.pem"
+    cloud.list_webserver = array_column(infrastructure['webserver'], 'IP')
+    cloud.id_file = settings['Identity']
     
     all_instance = infrastructure['webserver'] + infrastructure['saltmaster']
     list_host = array_column(all_instance, 'IP')
@@ -45,12 +47,19 @@ def main():
 # =-=-=--=---=-----=--------=-------------=
 # Functions
 # ----------------------------------------=
-def assign_roles(list_instance):
+def assign_roles(list_instance, count_master=0):
+    count = min(count_master, 1)
+    
+    list_web = list_instance[count + 1:]
+    list_master = list_instance[:count + 1]
+    haproxy = list_master[0]
+    
     _return = {
         'interface': provider.__name__,
         'date_created': date.today(),
-        'saltmaster':[list_instance.pop()],
-        'webserver': list_instance,
+        'loadbalancer':[haproxy],
+        'saltmaster':list_master,
+        'webserver': list_web,
     }
     return _return
 

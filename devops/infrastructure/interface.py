@@ -25,15 +25,16 @@ class Infrastructure(object):
             "sudo apt-get update -y",
         ],
         "install_as_master": [
-            "sudo apt-get install -y salt-api salt-syndic salt-minion salt-master",
+            "sudo apt-get install -y salt-api salt-minion salt-master",
         ],
         "install_as_minion": [
-            "sudo apt-get install -y salt-api salt-syndic salt-minion",
+            "sudo apt-get install -y salt-api salt-minion",
         ],
         "setup_master_filesystem": [
             # DevOps
             "sudo git clone https://github.com/mserrano-dev/DevOps.git /media/DevOps/",
             "sudo mkdir -p /srv/projects/workspace/webserver",
+            "sudo mkdir -p /srv/projects/workspace/haproxy",
             "sudo ln -s /media/DevOps/bin /srv/projects/workspace/bin",
             "sudo ln -s /media/DevOps/devops /srv/projects/workspace/devops",
             # SaltStack
@@ -68,7 +69,7 @@ class Infrastructure(object):
             config.add_line("  - " + ip_saltmaster)
         if minion_id != None: # add minion id, if non-None
             config.add_line("id: %s" % minion_id)
-        config.append_yaml_file(project_fs.read_file(settings_file)) # append the .yml file
+        config.append_file(project_fs.read_file(settings_file)) # append the .yml file
         
         _return = []
         _return.append("sudo bash -c \"printf '%s' >> /etc/salt/minion\"" % config.get_file())
@@ -82,8 +83,34 @@ class Infrastructure(object):
     
     def do_minion_config(self):
         self.count_webserver += 1
-        webserver_id = "web%s" % self.count_webserver; webserver_id = None
+        webserver_id = "mserrano.webserver-%s" % self.count_webserver; webserver_id = None
         return self.do_minion_config_base(webserver_id, 'saltstack/settings/minion.yml')
+    
+    def do_haproxy_config(self):
+        # configure the /etc/hosts file
+        etc_hosts = SingleLineFile()
+        etc_hosts.add_line("%s mserrano.loadbalancer" % self.ip_haproxy)
+        for idx, ip_webserver in enumerate(self.list_webserver):
+            etc_hosts.add_line("%s mserrano.webserver-%s" % (ip_webserver, idx))
+        etc_hosts.add_line("")
+        
+        # configure the /etc/default/haproxy file
+        set_enabled = 'ENABLED=1\n'
+        
+        # configure the /etc/haproxy/haproxy.cfg file
+        haproxy_cfg = project_fs.read_file('saltstack/settings/haproxy.cfg')
+        etc_haproxy_cfg = SingleLineFile()
+        etc_haproxy_cfg.append_file(haproxy_cfg)
+        for idx, ip_webserver in enumerate(self.list_webserver):
+            etc_haproxy_cfg.add_line("    server mserrano.webserver-%s  %s:80 maxconn 32" % (idx, ip_webserver))
+        etc_haproxy_cfg.add_line("")
+        
+        _return = []
+        _return.append("sudo bash -c \"printf '%s' >> /srv/projects/workspace/haproxy/hosts\"" % etc_hosts.get_file())
+        _return.append("sudo bash -c \"printf '%s' >> /srv/projects/workspace/haproxy/haproxy\"" % set_enabled)
+        _return.append("sudo bash -c \"printf '%s' >> /srv/projects/workspace/haproxy/haproxy.cfg\"" % etc_haproxy_cfg.get_file())
+        
+        return _return
     
     # =-=-=--=---=-----=--------=-------------=
     # Functions
@@ -94,7 +121,11 @@ class Infrastructure(object):
             'saltstack_minion': ['update_saltstack', 'install_as_minion'],
             'configure_minion': ['sleep', '__do_minion_config()'],
             'configure_master_as_minion': ['_do_master_as_minion_config()'],
-            'configure_master': ['setup_master_filesystem', 'accept_minions'],
+            'configure_master': [
+                'setup_master_filesystem',
+                '__do_haproxy_config()',
+                'accept_minions',
+            ],
         }
     
     @abstractmethod
