@@ -54,15 +54,15 @@ class Route53():
         def resp_status(resp):
             status = resp['ChangeInfo']['Status']
             msg = {
-                'PENDING': 'status pending, please wait...',
-                'INSYNC': 'all DNS servers are in-sync',
+                'PENDING': 'status pending, please wait..',
+                'INSYNC': 'all route53 dns servers are in-sync',
             }
             return msg[status]
         
         status_job = Polling(polling_interval=10,
                              polling_function=self.route53.get_change,
-                             start_msg='propagating changes to all Amazon Route53 authoritative DNS servers...', 
-                             end_msg='mserrano.net now pointing to %s' % ip_addr)
+                             start_msg='Propagating changes to all Amazon Route53 authoritative DNS servers...', 
+                             end_msg='mserrano.net now pointing to Load Balancer IP<%s>' % ip_addr)
         status_job.register_resp_parser_fn(resp_parser, {})
         status_job.register_resp_status_fn(resp_status, {})
         args = {

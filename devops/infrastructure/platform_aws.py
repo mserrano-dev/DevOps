@@ -1,7 +1,9 @@
 #!/usr/bin/python
 import boto3
+import botocore
 from infrastructure.interface import Infrastructure
 import json
+from util.array_phpfill import *
 from util.polling import Polling
 
 # ============================================================================ #
@@ -73,9 +75,24 @@ class Platform(Infrastructure):
         list_key = [KEY]
         if isinstance(KEY, list) == True:
             list_key = KEY
-        
-        resp = self.ec2.terminate_instances(InstanceIds=list_key)
-        print json.dumps(resp, indent=4, sort_keys=True, default=str)
+        try:
+            resp = self.ec2.terminate_instances(InstanceIds=list_key)
+            _return = (resp['ResponseMetadata']['HTTPStatusCode'] == 200)
+        except botocore.exceptions.ClientError:
+            _return = False
+        return _return
+    
+    def list_server(self):
+        """
+        Retrieve a list of all active Linux instances
+        """
+        resp = self.ec2.describe_instances()
+        _return = []
+        for resv in resp['Reservations']:
+            for obj in resv['Instances']:
+                if obj['State']['Name'] != 'terminated':
+                    _return.append(obj['InstanceId'])
+        return _return
     
     # =-=-=--=---=-----=--------=-------------=
     # Helpers
@@ -93,7 +110,6 @@ class Platform(Infrastructure):
         if (len(result)) == 1 and ('running' in result):
             if (result['running'] == len(resp['InstanceStatuses'])):
                 _return = True
-                
         return _return
     
     def __resp_status(self, resp):

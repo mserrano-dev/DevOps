@@ -16,7 +16,7 @@ from util.array_phpfill import *
 from util.polling import Polling
 
 # ============================================================================ #
-# Setup new saltmaster and webserver ec2 instances. 
+# Setup new saltmaster/loadbalancer and webserver ec2 instances.
 # Garbage collect remaining servers if all tests passing.
 # ============================================================================ #
 def main():
@@ -42,6 +42,7 @@ def main():
     install_docker(cloud, infrastructure)
     run_webservers(cloud, infrastructure)
     point_to_loadbalancer(cloud, infrastructure)
+    do_garbage_collect(cloud, infrastructure)
     
     stopwatch.output_report()
 
@@ -97,7 +98,7 @@ def configure_master(cloud, infrastructure):
 
 def configure_haproxy(cloud, infrastructure):
     poll_highstate_status(cloud, infrastructure,
-                          polling_interval=15,
+                          polling_interval=20,
                           search_key='haproxy running',
                           expected=len(infrastructure['loadbalancer']),
                           title_msg='Setting up more processing capacity...',
@@ -106,7 +107,7 @@ def configure_haproxy(cloud, infrastructure):
 
 def install_docker(cloud, infrastructure):
     poll_highstate_status(cloud, infrastructure,
-                          polling_interval=15,
+                          polling_interval=4,
                           search_key='minion setup',
                           expected=len(infrastructure['webserver']),
                           title_msg='Setting up Docker...',
@@ -115,7 +116,7 @@ def install_docker(cloud, infrastructure):
 
 def run_webservers(cloud, infrastructure):
     poll_highstate_status(cloud, infrastructure,
-                          polling_interval=5,
+                          polling_interval=6,
                           search_key='minion running',
                           expected=len(infrastructure['webserver']),
                           title_msg='Docker CLI is creating image to run...',
@@ -125,6 +126,22 @@ def run_webservers(cloud, infrastructure):
 def point_to_loadbalancer(cloud, infrastructure):
     route53 = dns_server.Route53(cloud.settings)
     route53.modify_record_set('*.mserrano.net', cloud.ip_haproxy)
+
+def do_garbage_collect(cloud, infrastructure):
+    list_active_server = cloud.list_server()
+    list_infrastructure = array_unique(array_column(infrastructure['loadbalancer'], 'KEY')
+                                       + array_column(infrastructure['saltmaster'], 'KEY')
+                                       + array_column(infrastructure['webserver'], 'KEY'))
+    list_garbage = array_diff(list_active_server, list_infrastructure)
+    msg = 'Garbage Collected Successfully'
+    if list_garbage != []:
+        print '  Will terminate %s instances' % len(list_garbage)
+        result = cloud.remove_server(list_garbage)
+        if result == False:
+            msg = "| \033[91m!! Garbage Collection Failed !!\033[0m\033[36m |"
+    else:
+        print '  Nothing to do here'
+    output.end_banner(msg)
 
 # =-=-=--=---=-----=--------=-------------=
 # Helpers
