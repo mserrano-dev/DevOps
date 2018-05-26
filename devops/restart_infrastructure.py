@@ -26,10 +26,10 @@ def main():
     cloud = provider.Platform(settings)
     infrastructure = assign_roles(cloud.create_server(settings['ServerCount']))
     project_fs.upsert_file('infrastructure.json', json.dumps(infrastructure, indent=4))
+    cloud.id_file = settings['Identity']
     cloud.ip_haproxy = array_column(infrastructure['loadbalancer'], 'IP')[0]
     cloud.list_saltmaster = array_column(infrastructure['saltmaster'], 'IP')
     cloud.list_webserver = array_column(infrastructure['webserver'], 'IP')
-    cloud.id_file = settings['Identity']
     
     all_instance = infrastructure['webserver'] + infrastructure['saltmaster']
     list_host = array_column(all_instance, 'IP')
@@ -38,9 +38,10 @@ def main():
     install_saltstack(cloud, infrastructure)
     configure_minion(cloud, infrastructure)
     configure_master(cloud, infrastructure)
+    configure_haproxy(cloud, infrastructure)
     install_docker(cloud, infrastructure)
     run_webservers(cloud, infrastructure)
-    point_to_route53(cloud, infrastructure)
+    point_to_loadbalancer(cloud, infrastructure)
     
     stopwatch.output_report()
 
@@ -76,13 +77,13 @@ def install_saltstack(cloud, infrastructure):
     output.end_banner('Saltstack Installed')
 
 def configure_webserver_minion(cloud, infrastructure):
-    run_on_each(cloud, infrastructure['webserver'], 
-                recipe='configure_minion', 
+    run_on_each(cloud, infrastructure['webserver'],
+                recipe='configure_minion',
                 status_msg='Minions Configured')
 
 def configure_master_as_minion(cloud, infrastructure):
-    run_on_each(cloud, infrastructure['saltmaster'], 
-                recipe='configure_master_as_minion', 
+    run_on_each(cloud, infrastructure['saltmaster'],
+                recipe='configure_master_as_minion',
                 status_msg='Master Configured as Minion')
 
 def configure_minion(cloud, infrastructure):
@@ -90,31 +91,40 @@ def configure_minion(cloud, infrastructure):
     configure_master_as_minion(cloud, infrastructure)
 
 def configure_master(cloud, infrastructure):
-    run_on_each(cloud, infrastructure['saltmaster'], 
-                recipe='configure_master', 
-                status_msg='Applied Highstate to each Minion')
+    run_on_each(cloud, infrastructure['saltmaster'],
+                recipe='configure_master',
+                status_msg='Accepted all Minion public keys and Applied a Highstate')
+
+def configure_haproxy(cloud, infrastructure):
+    poll_highstate_status(cloud, infrastructure,
+                          polling_interval=15,
+                          search_key='haproxy running',
+                          expected=len(infrastructure['loadbalancer']),
+                          title_msg='Setting up more processing capacity...',
+                          status_msg='HAProxy daemon running',
+                          done_msg='Load Balancer ready to provide high availability')
 
 def install_docker(cloud, infrastructure):
     poll_highstate_status(cloud, infrastructure,
                           polling_interval=15,
-                          search_key='minion setup', 
-                          title_msg='Setting up Docker...', 
-                          status_msg='are now ready', 
-                          done_msg='All Docker daemon now running')
+                          search_key='minion setup',
+                          expected=len(infrastructure['webserver']),
+                          title_msg='Setting up Docker...',
+                          status_msg='Docker daemon running',
+                          done_msg='All Docker daemon ready to accept Docker CLI commands')
 
 def run_webservers(cloud, infrastructure):
     poll_highstate_status(cloud, infrastructure,
                           polling_interval=5,
-                          search_key='minion running', 
-                          title_msg='Creating docker images...', 
-                          status_msg='are running containers successfully', 
+                          search_key='minion running',
+                          expected=len(infrastructure['webserver']),
+                          title_msg='Docker CLI is creating image to run...',
+                          status_msg='are running containers successfully',
                           done_msg='All Apache2 server now running and ready to serve traffic')
 
-def point_to_route53(cloud, infrastructure):
-    web1 = infrastructure['webserver'][0]['IP'] #TODO: HAProxy
-    
+def point_to_loadbalancer(cloud, infrastructure):
     route53 = dns_server.Route53(cloud.settings)
-    route53.modify_record_set('*.mserrano.net', web1)
+    route53.modify_record_set('*.mserrano.net', cloud.ip_haproxy)
 
 # =-=-=--=---=-----=--------=-------------=
 # Helpers
@@ -160,11 +170,11 @@ def poll_highstate_status(cloud, infrastructure, ** kwargs):
     
     def highstate_confirm_success(resp, cloud, search_key):
         num_found = __count_occurances(cloud.log_location_on_local, search_key)
-        return (num_found == cloud.count_webserver)
+        return (num_found == kwargs['expected'])
     
     def highstate_report_progress(resp, cloud, search_key):
         num_found = __count_occurances(cloud.log_location_on_local, search_key)
-        return '%s/%s %s' % (num_found, cloud.count_webserver, kwargs['status_msg'])
+        return '%s/%s %s' % (num_found, kwargs['expected'], kwargs['status_msg'])
     
     status_highstate = Polling(polling_interval=kwargs['polling_interval'],
                                polling_function=remote_host.rsync,
