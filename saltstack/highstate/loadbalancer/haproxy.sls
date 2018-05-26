@@ -2,12 +2,15 @@
 # Setup this minion as haproxy server
 # ----------------------------------------=
 
-mserrano/haproxy/setup/begin:
+mserrano/loadbalancer/setup/begin:
   event.send:
-    - status: haproxy started
-    - comment: installing haproxy dependencies [haproxy]
     - require_in:
       - pkg: build_dependencies
+    # ------------------------------------
+    # reactor/log__mserrano.sls
+    - status: haproxy started
+    - comment: installing haproxy dependencies [haproxy]
+    # ------------------------------------
 
 /etc/default: file.directory
 /etc/haproxy: file.directory
@@ -44,10 +47,12 @@ haproxy:
     - require:
       - pkg: build_dependencies
 
-mserrano/haproxy/setup/complete:
+mserrano/loadbalancer/setup/complete:
   event.send:
-    - docker__obj: apache2
-    - status: haproxy running
-    - comment: minion has been setup as haproxy server (haproxy service is running)
     - require:
       - service: haproxy
+    # ------------------------------------
+    # reactor/log__mserrano.sls
+    - status: haproxy running
+    - comment: minion has been setup as haproxy server (haproxy service is running)
+    # ------------------------------------

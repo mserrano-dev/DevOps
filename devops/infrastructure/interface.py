@@ -33,7 +33,7 @@ class Infrastructure(object):
         "setup_master_filesystem": [
             # DevOps
             "sudo git clone https://github.com/mserrano-dev/DevOps.git /media/DevOps/",
-            "sudo mkdir -p /srv/projects/workspace/webserver",
+            "sudo mkdir -p /srv/projects/workspace/apache2",
             "sudo mkdir -p /srv/projects/workspace/haproxy",
             "sudo ln -s /media/DevOps/bin /srv/projects/workspace/bin",
             "sudo ln -s /media/DevOps/devops /srv/projects/workspace/devops",
@@ -44,16 +44,16 @@ class Infrastructure(object):
             "sudo ln -s /media/DevOps/saltstack/pillar /srv/pillar",
             "sudo ln -s /media/DevOps/saltstack/reactor /srv/reactor",
             # Docker
-            "sudo ln -s /media/DevOps/docker/dockerfile /srv/projects/workspace/webserver/dockerfile",
-            "sudo ln -s /media/DevOps/docker/.dockerignore /srv/projects/workspace/webserver/.dockerignore",
+            "sudo ln -s /media/DevOps/docker/apache2/Dockerfile /srv/projects/workspace/apache2/Dockerfile",
+            "sudo ln -s /media/DevOps/docker/apache2/.dockerignore /srv/projects/workspace/apache2/.dockerignore",
             # Apache2
             "sudo git clone https://github.com/mserrano-dev/Configuration.git /media/Configuration",
             "sudo ln -s /media/Configuration/apache/sites /srv/projects/workspace/sites",
             # WebServer
-            "sudo git clone https://github.com/mserrano-dev/LAB-MSERRANO.git /srv/projects/workspace/webserver/LAB.NET",
-            "sudo git clone https://github.com/mserrano-dev/WS-MSERRANO.git /srv/projects/workspace/webserver/WS.NET",
-            "sudo git clone https://github.com/mserrano-dev/WWW-MSERRANO.git /srv/projects/workspace/webserver/WWW.NET",
-            "sudo git clone https://github.com/mserrano-dev/DOCS-MSERRANO.git /srv/projects/workspace/webserver/DOCS.NET",
+            "sudo git clone https://github.com/mserrano-dev/LAB-MSERRANO.git /srv/projects/workspace/apache2/LAB.NET",
+            "sudo git clone https://github.com/mserrano-dev/WS-MSERRANO.git /srv/projects/workspace/apache2/WS.NET",
+            "sudo git clone https://github.com/mserrano-dev/WWW-MSERRANO.git /srv/projects/workspace/apache2/WWW.NET",
+            "sudo git clone https://github.com/mserrano-dev/DOCS-MSERRANO.git /srv/projects/workspace/apache2/DOCS.NET",
         ],
         "accept_minions": [
             "sudo cp /media/DevOps/saltstack/settings/master.yml /etc/salt/master",
@@ -155,7 +155,7 @@ class Infrastructure(object):
         """
         return """ @returns <bool>True on success, 
                             <bool>False on failure """
-                            
+    
     # =-=-=--=---=-----=--------=-------------=
     # Helpers
     # ----------------------------------------=

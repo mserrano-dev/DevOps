@@ -1,4 +1,5 @@
 auto_accept: True
+state_top: top.sls
 file_roots:
    base:
      - /srv/salt
@@ -8,7 +9,7 @@ log_level_logfile: debug
 reactor:
   - 'salt/minion/*/start':
     - /srv/reactor/sync__grains.sls
-  # webservers
+  # webserver
   - 'mserrano/webserver/install_docker_server/begin':
     - /srv/reactor/log__mserrano.sls
   - 'mserrano/webserver/install_docker_server/complete':
@@ -16,9 +17,9 @@ reactor:
     - /srv/reactor/log__mserrano.sls
   - 'mserrano/webserver/setup_apache2_via_docker/complete':
     - /srv/reactor/log__mserrano.sls
-  # haproxy
-  - 'mserrano/haproxy/setup/begin':
+  # loadbalancer
+  - 'mserrano/loadbalancer/setup/begin':
     - /srv/reactor/log__mserrano.sls
-  - 'mserrano/haproxy/setup/complete':
+  - 'mserrano/loadbalancer/setup/complete':
     - /srv/reactor/log__mserrano.sls
 timeout: 15

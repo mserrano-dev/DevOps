@@ -3,9 +3,9 @@
 # ----------------------------------------=
 
 base:
-  'roles:web':
+  'roles:webserver':
     - match: grain
-    - webserver
-  'roles:load_balancer':
+    - webserver.build_dependencies
+  'roles:loadbalancer':
     - match: grain
-    - haproxy
+    - loadbalancer.haproxy
