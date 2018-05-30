@@ -49,11 +49,14 @@ def main():
 # =-=-=--=---=-----=--------=-------------=
 # Functions
 # ----------------------------------------=
-def assign_roles(list_instance, count_master=0):
-    count = min(count_master, 1)
+def assign_roles(list_instance, my_count_master=0):
+    not_possible = (my_count_master > len(list_instance))
+    bad_setting = (my_count_master < 1)
+    do_default = not_possible or bad_setting
+    count = (1 if do_default else my_count_master)
     
-    list_web = list_instance[count + 1:]
-    list_master = list_instance[:count + 1]
+    list_web = list_instance[count:]
+    list_master = list_instance[:count]
     haproxy = list_master[0]
     
     _return = {
