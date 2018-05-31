@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from infrastructure import cloud_storage
 from infrastructure import dns_server
 from infrastructure import platform_aws as provider
 import json
@@ -25,7 +26,6 @@ def main():
     settings = project_fs.read_json('.aws/mserrano.config', rel_to_user_home=True)
     cloud = provider.Platform(settings)
     infrastructure = assign_roles(cloud.create_server(settings['ServerCount']))
-    project_fs.upsert_file('infrastructure.json', json.dumps(infrastructure, indent=4))
     cloud.id_file = settings['Identity']
     cloud.ip_haproxy = array_column(infrastructure['loadbalancer'], 'IP')[0]
     cloud.list_saltmaster = array_column(infrastructure['saltmaster'], 'IP')
@@ -42,6 +42,7 @@ def main():
     install_docker(cloud, infrastructure)
     run_webservers(cloud, infrastructure)
     point_to_loadbalancer(cloud, infrastructure)
+    update_cloud_storage(cloud, infrastructure)
     do_garbage_collect(cloud, infrastructure)
     
     stopwatch.output_report()
@@ -129,6 +130,13 @@ def run_webservers(cloud, infrastructure):
 def point_to_loadbalancer(cloud, infrastructure):
     route53 = dns_server.Route53(cloud.settings)
     route53.modify_record_set('*.mserrano.net', cloud.ip_haproxy)
+    
+def update_cloud_storage(cloud, infrastructure):
+    output.start_banner_animation('Contacting Amazon S3 Bucket...')
+    project_fs.upsert_file('infrastructure.json', json.dumps(infrastructure, indent=4))
+    s3_bucket = cloud_storage.S3Bucket()
+    s3_bucket.upsert_file('infrastructure.json')
+    output.end_banner('Infrastructure.json has been uploaded to [mserrano-devops-bucket]')
 
 def do_garbage_collect(cloud, infrastructure):
     list_active_server = cloud.list_server()

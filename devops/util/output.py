@@ -5,7 +5,12 @@ from util import timer
 
 # ============================================================================ #
 # Terminal output related helpers
-# ============================================================================ #                                                            \r"
+# ============================================================================ #
+def start_banner_animation(msg):
+    start_banner(msg, True)
+    timer.sleep(1)
+    start_banner(msg, False)
+
 def start_banner(msg, do_blink):
     """
     Will present msg with a blinking I bar
