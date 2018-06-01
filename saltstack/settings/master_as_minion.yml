@@ -1,5 +1,5 @@
 startup_states: highstate
 grains:
   roles:
-    - master
+    - saltmaster
     - loadbalancer

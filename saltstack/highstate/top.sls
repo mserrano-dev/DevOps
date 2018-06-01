@@ -3,9 +3,12 @@
 # ----------------------------------------=
 
 base:
+  'roles:saltmaster':
+    - match: grain
+    - saltmaster.init
   'roles:webserver':
     - match: grain
-    - webserver.build_dependencies
+    - webserver.init
   'roles:loadbalancer':
     - match: grain
-    - loadbalancer.haproxy
+    - loadbalancer.init
