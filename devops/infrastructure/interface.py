@@ -49,11 +49,6 @@ class Infrastructure(object):
             # Apache2
             "sudo git clone https://github.com/mserrano-dev/Configuration.git /media/Configuration",
             "sudo ln -s /media/Configuration/apache/sites /srv/projects/workspace/sites",
-            # WebServer
-            "sudo git clone https://github.com/mserrano-dev/LAB-MSERRANO.git /srv/projects/workspace/apache2/LAB.NET",
-            "sudo git clone https://github.com/mserrano-dev/WS-MSERRANO.git /srv/projects/workspace/apache2/WS.NET",
-            "sudo git clone https://github.com/mserrano-dev/WWW-MSERRANO.git /srv/projects/workspace/apache2/WWW.NET",
-            "sudo git clone https://github.com/mserrano-dev/DOCS-MSERRANO.git /srv/projects/workspace/apache2/DOCS.NET",
         ],
         "accept_minions": [
             "sudo cp /media/DevOps/saltstack/settings/master.yml /etc/salt/master",

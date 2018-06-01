@@ -3,11 +3,11 @@
 # ----------------------------------------=
 
 apps:
-  LAB.NET: True
-  WS.NET: True
-  WWW.NET: True
-  DOCS.NET: True
-  BLOG.NET: False
-  TIPS.NET: False
+  LAB-MSERRANO: LAB.NET
+  WS-MSERRANO: WS.NET
+  WWW-MSERRANO: WWW.NET
+  DOCS-MSERRANO: DOCS.NET
+  BLOG-MSERRANO: ~
+  TIPS-MSERRANO: ~
 
 environment: STAGE

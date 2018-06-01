@@ -17,22 +17,22 @@
   file.managed:
     - source: salt://workspace/apache2/.dockerignore
 
-{% for app, enabled in pillar.get('apps', {}).items() %}
-{%     if enabled == True %}
+{% for git_repo, conf in pillar.get('apps', {}).items() %}
+{%     if conf != None %}
 
-/media/{{ env }}/sites/{{ app }}.conf:
+/media/{{ env }}/sites/{{ conf }}.conf:
   file.managed:
-    - source: salt://workspace/sites/{{ app }}.conf
+    - source: salt://workspace/sites/{{ conf }}.conf
     - require:
       - file: /media/{{ env }}/sites
     - require_in:
       - docker_image: webserver
 
-/media/{{ env }}/apache2/{{ app }}:
-  file.recurse:
-    - source: salt://workspace/apache2/{{ app }}
-    - require:
-      - file: /media/{{ env }}/apache2
+clone-{{ git_repo }}:
+  git.latest:
+    - name: https://github.com/mserrano-dev/{{ git_repo }}.git
+    - target: /media/{{ env }}/apache2/{{ conf }}
+    - branch: {{ env }}
     - require_in:
       - docker_image: webserver
 
