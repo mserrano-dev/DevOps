@@ -2,6 +2,7 @@
 from infrastructure import cloud_storage
 from infrastructure import dns_server
 from infrastructure import platform_aws as provider
+from infrastructure import settings as helper
 import json
 import os
 import re
@@ -23,10 +24,10 @@ from util.polling import Polling
 def main():
     stopwatch = timer.Stopwatch()
     
-    settings = project_fs.read_json('.aws/mserrano.config', rel_to_user_home=True)
+    settings = helper.get_mserrano_config()
     cloud = provider.Platform(settings)
     infrastructure = assign_roles(cloud.create_server(settings['ServerCount']))
-    cloud.id_file = settings['Identity']
+    cloud.id_file = settings['OpsIdentity']
     cloud.ip_haproxy = array_column(infrastructure['loadbalancer'], 'IP')[0]
     cloud.list_saltmaster = array_column(infrastructure['saltmaster'], 'IP')
     cloud.list_webserver = array_column(infrastructure['webserver'], 'IP')
