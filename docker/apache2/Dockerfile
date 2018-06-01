@@ -1,9 +1,6 @@
 FROM ubuntu:17.10
 LABEL maintainer="markanthony.serrano2@gmail.com"
 
-COPY /apache2 /var/www
-COPY /sites /etc/apache2/sites-enabled
-
 RUN apt-get update \
     && apt-get install -y apache2 php libapache2-mod-php php-mcrypt php-mysql \
     && rm -rf /var/lib/apt/lists/* \

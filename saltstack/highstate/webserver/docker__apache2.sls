@@ -56,7 +56,9 @@ run_apache2:
     - skip_translate: True
     - port_bindings: {'80/tcp': 80}
     - publish_all_ports: True
-    - replace: True
+    - binds:
+      - /media/{{ env }}/apache2:/var/www
+      - /media/{{ env }}/sites:/etc/apache2/sites-enabled
     - require:
       - docker_image: webserver
 
