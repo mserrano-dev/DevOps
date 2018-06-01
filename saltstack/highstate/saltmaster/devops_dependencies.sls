@@ -1,5 +1,6 @@
 # =-=-=--=---=-----=--------=-------------=
-# Install pip and pipenv
+# Install pip packages from
+#   pipenv generated requirements.txt
 # ----------------------------------------=
 
 devops_dependencies:
@@ -7,13 +8,9 @@ devops_dependencies:
     - pkgs:
       - python-pip
 
-pipenv:
+pip-install-requirements:
   pip.installed:
-    - name: pipenv == 2018.5.18
+    - requirements:
+      - /media/DevOps/requirements.txt
     - require:
       - pkg: devops_dependencies
-
-cd /media/Devops && pipenv install:
-  cmd.run:
-    - require:
-      - pip: pipenv
