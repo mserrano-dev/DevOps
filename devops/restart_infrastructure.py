@@ -70,9 +70,9 @@ def assign_roles(list_instance, my_count_master=0):
     return _return
 
 def authenticate_all_host(list_host):
-    poll_authentication(title_msg='Adding fingerprints to ~/ssh/known_hosts...', 
-                        list_host=list_host,
-                        done_msg='All Remote Host Authenticated')
+    remote_host.add_knownhosts(title_msg='Adding fingerprints to ~/ssh/known_hosts...', 
+                               list_host=list_host,
+                               done_msg='All Remote Host Authenticated')
 
 def install_saltstack(cloud, infrastructure):
     runner = multi_thread.Runner()
@@ -162,32 +162,6 @@ def run_on_each(cloud, list_instance, ** kwargs):
     runner.add_recipe_on_each(cloud, list_instance, kwargs['recipe'])
     runner.invoke_all_and_wait()
     output.end_banner(kwargs['status_msg'])
-
-def poll_authentication( ** kwargs):
-    def auth_confirm_success(resp, list_host):
-        _return = True
-        if resp.count('\n') == (len(list_host) * 3):
-            out_file = open("%s/.ssh/known_hosts" % os.path.expanduser("~"), "a")
-            out_file.write(resp)
-        else:
-            _return = False
-        return _return
-    
-    def auth_report_progress(resp, list_host):
-        result = resp.count('\n') / 3
-        if result == len(list_host):
-            _return = 'Success! %d/%d keys collected. Permanently adding to known_hosts..' % (result, len(list_host))
-        else:
-            _return = 'Failed.. %d/%d keys collected. Trying again' % (result, len(list_host))
-        return _return
-    
-    status_auth = Polling(polling_interval=2,
-                          polling_function=remote_host.add_fingerprint,
-                          start_msg=kwargs['title_msg'], 
-                          end_msg=kwargs['done_msg'])
-    status_auth.register_resp_parser_fn(auth_confirm_success, {'list_host':kwargs['list_host']})
-    status_auth.register_resp_status_fn(auth_report_progress, {'list_host':kwargs['list_host']})
-    status_auth.wait({'LIST_HOST':kwargs['list_host']})
 
 def poll_highstate_status(cloud, infrastructure, ** kwargs):
     def __count_occurances(file, search_key):
