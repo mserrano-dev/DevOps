@@ -1,3 +1,0 @@
-#!/bin/bash
-PROJECT_ROOT=`dirname $0`/../..
-pipenv run python "$PROJECT_ROOT/devops/install_webserver.py" $@

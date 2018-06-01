@@ -11,7 +11,7 @@
 log__banner:
   local.cmd.run:
     - comment: present standard info
-    - tgt: 'roles:master'
+    - tgt: 'roles:saltmaster'
     - tgt_type: grain
     - arg:
       - 'printf "[{{ minion_id }}] [{{ args['status'] }}] - ({{ tag }})\n" >> {{ log_file }}'
@@ -19,7 +19,7 @@ log__banner:
 log__entry:
   local.cmd.run:
     - comment: timestamped comment with end banner
-    - tgt: 'roles:master'
+    - tgt: 'roles:saltmaster'
     - tgt_type: grain
     - arg:
       - 'printf "[{{ timestamp }}] {{ args['comment'] }}\n---\n" >> {{ log_file }}'
