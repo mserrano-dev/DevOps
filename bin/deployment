@@ -1,0 +1,3 @@
+#!/bin/bash
+PROJECT_ROOT=`dirname $0`/..
+pipenv run python "$PROJECT_ROOT/devops/deployment.py" $@

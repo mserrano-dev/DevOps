@@ -42,3 +42,10 @@ def rsync(HOST, IDENTITY, SOURCE, DESTINATION):
         '%s/%s' % (project_fs.get_root(), DESTINATION),
     ]
     return subprocess.Popen(args).wait()
+
+def local(LIST_CMD):
+    """
+    Execute commands on local host
+    
+    """
+    return subprocess.Popen(LIST_CMD).wait()
