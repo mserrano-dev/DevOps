@@ -14,7 +14,6 @@ class Infrastructure(object):
     # ----------------------------------------=
     log_location_on_remote = '/tmp/mserrano.log' #absolute
     log_location_on_local = '/tmp/mserrano.log' #relative to project root
-    count_webserver = 0 #do not modify. this class proeprty available
     __list_cmd = {
         "sleep": [
             "sleep 2",
@@ -77,8 +76,8 @@ class Infrastructure(object):
         return self.do_minion_config_base('master', 'saltstack/settings/master_as_minion.yml')
     
     def do_minion_config(self):
-        self.count_webserver += 1
-        webserver_id = "mserrano.webserver-%s" % self.count_webserver; webserver_id = None
+        self.__count_webserver += 1
+        webserver_id = "mserrano.webserver-%s" % self.__count_webserver; webserver_id = None
         return self.do_minion_config_base(webserver_id, 'saltstack/settings/minion.yml')
     
     def do_haproxy_config(self):
@@ -111,6 +110,7 @@ class Infrastructure(object):
     # Functions
     # ----------------------------------------=
     def __init__(self):
+        self.__count_webserver = 0
         self.__recipe = {
             'saltstack_master': ['update_saltstack', 'install_as_master'],
             'saltstack_minion': ['update_saltstack', 'install_as_minion'],

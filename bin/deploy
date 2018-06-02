@@ -1,3 +1,4 @@
 #!/bin/bash
 PROJECT_ROOT=`dirname $0`/..
-pipenv run python "$PROJECT_ROOT/devops/remote_dispatcher.py" --role saltmaster --script update_app --args "$@"
+list_arg=$@
+pipenv run python "$PROJECT_ROOT/devops/remote_dispatcher.py" --role saltmaster --script update_app --args "${list_arg-''}"
