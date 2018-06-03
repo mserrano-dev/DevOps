@@ -9,5 +9,3 @@ apps:
   DOCS-MSERRANO: DOCS.NET
   BLOG-MSERRANO: ~
   TIPS-MSERRANO: ~
-
-environment: STAGE

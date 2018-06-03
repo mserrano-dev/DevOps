@@ -14,7 +14,7 @@ class Infrastructure(object):
     # ----------------------------------------=
     log_location_on_remote = '/tmp/mserrano.log' #absolute
     log_location_on_local = '/tmp/mserrano.log' #relative to project root
-    __list_cmd = {
+    __playbook = {
         "sleep": [
             "sleep 2",
         ],
@@ -56,6 +56,65 @@ class Infrastructure(object):
         ],
     }
     
+    # =-=-=--=---=-----=--------=-------------=
+    # Functions
+    # ----------------------------------------=
+    def __init__(self):
+        self.__count_webserver = 0
+        self.__recipe = {
+            'saltstack_master': ['update_saltstack', 'install_as_master'],
+            'saltstack_minion': ['update_saltstack', 'install_as_minion'],
+            'configure_minion': ['sleep', '__do_minion_config()'],
+            'configure_master_as_minion': ['_do_master_as_minion_config()'],
+            'configure_master': [
+                'setup_master_filesystem',
+                '__do_env_setup()',
+                '__do_haproxy_config()',
+                'accept_minions',
+            ],
+        }
+    
+    @abstractmethod
+    def create_server(self):
+        """
+        Spin up a vanilla Linux instance
+            :param COUNT - number of instances to spin up
+        """
+        return """ @returns []<dict> on success,
+                            <bool>False on failure """
+    
+    @abstractmethod
+    def collect_info(self):
+        """
+        Collect information about a Linux instance
+            :param OBJ - instance to get info from
+        """
+        return """ @returns <dict>{KEY:<string>,
+                                   IP:<string>} on success,
+                            <bool>False on failure """
+    
+    @abstractmethod
+    def remove_server(self):
+        """
+        Destroy a specified Linux instance
+            :param KEY - list or string, of instance(s) to be terminated
+        """
+        return """ @returns <bool>True on success, 
+                            <bool>False on failure """
+    
+    def recipe(self, recipe_name):
+        _return = []
+        for key in self.__recipe[recipe_name]:
+            if key in self.__playbook:
+                _return += self.__playbook[key]
+            else:
+                dynamic_cmd = key.lstrip('_').rstrip('()')
+                _return += getattr(self, dynamic_cmd)()
+        return _return
+
+    # =-=-=--=---=-----=--------=-------------=
+    # Helpers
+    # ----------------------------------------=
     def do_minion_config_base(self, minion_id, settings_file):
         config = SingleLineFile()
         config.add_line("master:")
@@ -106,60 +165,18 @@ class Infrastructure(object):
         
         return _return
     
-    # =-=-=--=---=-----=--------=-------------=
-    # Functions
-    # ----------------------------------------=
-    def __init__(self):
-        self.__count_webserver = 0
-        self.__recipe = {
-            'saltstack_master': ['update_saltstack', 'install_as_master'],
-            'saltstack_minion': ['update_saltstack', 'install_as_minion'],
-            'configure_minion': ['sleep', '__do_minion_config()'],
-            'configure_master_as_minion': ['_do_master_as_minion_config()'],
-            'configure_master': [
-                'setup_master_filesystem',
-                '__do_haproxy_config()',
-                'accept_minions',
-            ],
-        }
-    
-    @abstractmethod
-    def create_server(self):
-        """
-        Spin up a vanilla Linux instance
-            :param COUNT - number of instances to spin up
-        """
-        return """ @returns []<dict> on success,
-                            <bool>False on failure """
-    
-    @abstractmethod
-    def collect_info(self):
-        """
-        Collect information about a Linux instance
-            :param OBJ - instance to get info from
-        """
-        return """ @returns <dict>{KEY:<string>,
-                                   IP:<string>} on success,
-                            <bool>False on failure """
-    
-    @abstractmethod
-    def remove_server(self):
-        """
-        Destroy a specified Linux instance
-            :param KEY - list or string, of instance(s) to be terminated
-        """
-        return """ @returns <bool>True on success, 
-                            <bool>False on failure """
-    
-    # =-=-=--=---=-----=--------=-------------=
-    # Helpers
-    # ----------------------------------------=
-    def recipe(self, recipe_name):
-        _return = []
-        for key in self.__recipe[recipe_name]:
-            if key in self.__list_cmd:
-                _return += self.__list_cmd[key]
-            else:
-                dynamic_cmd = key.lstrip('_').rstrip('()')
-                _return += getattr(self, dynamic_cmd)()
+    def do_env_setup(self):
+        if self.parsed.is_stage != None:
+            env_prefix = ('"stage-"' if self.parsed.is_stage else '""')
+            salt_env = ('STAGE' if self.parsed.is_stage else 'PROD')
+            
+            # configure the pillar data
+            dynamic_pillar = SingleLineFile()
+            dynamic_pillar.add_line("environment: %s" % salt_env)
+            dynamic_pillar.add_line("")
+            
+            _return = []
+            _return.append("sudo /media/DevOps/bin/saltmaster/setup_apache2_conf %s" % env_prefix) # invoke sed script
+            _return.append("sudo bash -c \"printf '%s' > /media/DevOps/saltstack/pillar/environment.sls\"" % dynamic_pillar.get_file())
+        
         return _return

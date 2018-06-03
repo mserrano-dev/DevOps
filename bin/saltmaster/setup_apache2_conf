@@ -1,0 +1,2 @@
+#!/bin/bash
+sudo bash -c "find /srv/projects/workspace/sites/ -name "*.conf" | xargs sed -i 's/dev-/$1/g'"

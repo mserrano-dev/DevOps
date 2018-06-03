@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import argparse
 from infrastructure import cloud_storage
 from infrastructure import dns_server
 from infrastructure import platform_aws as provider
@@ -27,6 +28,7 @@ def main():
     settings = helper.get_mserrano_config()
     cloud = provider.Platform(settings)
     infrastructure = assign_roles(cloud.create_server(settings['ServerCount']))
+    cloud.parsed = __use_argparse()
     cloud.id_file = settings['OpsIdentity']
     cloud.ip_haproxy = array_column(infrastructure['loadbalancer'], 'IP')[0]
     cloud.list_saltmaster = array_column(infrastructure['saltmaster'], 'IP')
@@ -192,5 +194,15 @@ def poll_highstate_status(cloud, infrastructure, ** kwargs):
         'DESTINATION': cloud.log_location_on_local,
     }
     status_highstate.wait(args)
+
+def __use_argparse():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--stage',
+                        action="store_true", dest="is_stage", default=None,
+                        help="bin subdir/minion role")
+    parser.add_argument('--production',
+                        action="store_false", dest="is_stage", default=None,
+                        help="script to be executed")
+    return parser.parse_args()
 
 main() # start script
