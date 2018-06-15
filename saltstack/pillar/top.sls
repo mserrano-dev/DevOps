@@ -6,3 +6,5 @@ base:
   '*':
     - docker
     - mserrano
+    - environment
+
