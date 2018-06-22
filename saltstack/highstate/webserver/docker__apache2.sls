@@ -4,6 +4,7 @@
 # ----------------------------------------=
 
 {% set env = salt.pillar.get('environment') %}
+{% set default_app = salt.pillar.get('default_app') %}
 
 /media/{{ env }}: file.directory
 /media/{{ env }}/sites: file.directory
@@ -38,6 +39,14 @@ clone-{{ git_repo }}:
 
 {%     endif %}
 {% endfor %}
+
+/media/{{ env }}/sites/000-default.conf:
+  file.managed:
+    - source: salt://workspace/sites/{{ default_app }}.conf
+    - require:
+      - file: /media/{{ env }}/sites
+    - require_in:
+      - docker_image: webserver
 
 webserver:
   docker_image.present:

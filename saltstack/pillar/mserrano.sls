@@ -9,3 +9,5 @@ apps:
   DOCS-MSERRANO: DOCS.NET
   BLOG-MSERRANO: ~
   TIPS-MSERRANO: ~
+
+default_app: WWW.NET
